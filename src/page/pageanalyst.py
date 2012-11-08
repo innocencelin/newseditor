@@ -5,7 +5,15 @@ import lxml
 import pyquery
 
 def _formatTitle(title):
-    return title.split('_')[0]
+    parts = title.split('_')
+    maxlen = -1
+    maxvalue = None
+    for part in parts:
+        plen = len(part)
+        if plen > maxlen:
+            maxlen = plen
+            maxvalue = part
+    return maxvalue
 
 class PageAnalyst(object):
 
@@ -20,14 +28,19 @@ class PageAnalyst(object):
         items = docquery('head title')
         if len(items) > 0:
             title = items[0].text_content()
-        page = {}
-        if oldPage.get('title'):
-            page['title'] = oldPage['title']
+        page = {
+            'url': oldPage['url']
+        }
+        oldTitle = oldPage.get('title')
         if title:
-            formattedTitle = _formatTitle(title)
-            if detailed:
-                page['title'] = formattedTitle
+            title = _formatTitle(title)
+        if detailed:
+            page['title'] = title if title else oldTitle
+        else:
+            if oldTitle:
+                page['title'] = oldTitle
+                page['pagetitle'] = title
             else:
-                page['pagetitle'] = formattedTitle
+                page['title'] = title
         return page
 

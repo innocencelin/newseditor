@@ -1,10 +1,6 @@
-import httplib2
 import json
-import logging
 import os
-import urllib2
 
-from google.appengine.api import taskqueue
 from google.appengine.ext.webapp import template
 
 import webapp2
