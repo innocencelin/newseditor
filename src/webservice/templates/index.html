@@ -1,0 +1,20 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<title>News Editor</title>
+</head>
+  <body>
+    <form action="/admin/editor/test/" method="POST">
+    <br/>URL: <input type="text" name="url" value="{{ url }}" size="80"/>
+    <br/>Header:
+    <br/><textarea name="httpheader" rows="3" cols="130">{{ httpheader }}</textarea>
+    <br/>Parsed encoding: {{ parsedencoding }}
+    <br/>Content:
+    <br/><textarea name="content" rows="10" cols="130">{{ content }}</textarea>
+    <input type="submit" name="action" value="Submit" />
+    </form>
+    <br/>Title: {{ page.title }}
+    <br/>Page title: {{ page.pagetitle }}
+  </body>
+</html>
+

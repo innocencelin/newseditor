@@ -1,0 +1,3 @@
+python $HOME/bin/google_appengine/dev_appserver.py --help
+python $HOME/bin/google_appengine/dev_appserver.py $HOME/workspace-gae/newseditor/src --port 8083 --datastore_path=$HOME/workspace-gae/newseditor/test/tmp/newseditor.datastore
+
