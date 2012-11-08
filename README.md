@@ -1,0 +1,4 @@
+newseditor
+==========
+
+News Editor
