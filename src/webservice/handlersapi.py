@@ -88,7 +88,7 @@ class SingleEditResponse(webapp2.RequestHandler):
         callbackurl = data['callbackurl']
         responseData = {
                 'origin': data['origin'],
-                'page': page,
+                'items': [page],
         }
         doCallback = False
         for i in range(_CALLBACK_TRYCOUNT):
