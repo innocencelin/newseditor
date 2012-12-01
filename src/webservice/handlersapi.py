@@ -20,10 +20,9 @@ def _fetchContent(url, header, triedcount):
     _, _, content = fetcher.fetch()
     return content
 
-def _analysePage(oldPage, content):
+def _analysePage(page, content):
     analyst = PageAnalyst()
-    page = analyst.analyse(content, oldPage)
-    return page
+    analyst.analyse(content, page)
 
 def _pushItemsBack(callbackurl, responseData):
     try:
@@ -67,8 +66,8 @@ class SingleEditResponse(webapp2.RequestHandler):
         data = json.loads(self.request.body)
         triedcount = data.get('triedcount', 0)
         header = data['header']
-        oldPage = data['page']
-        url = oldPage['url']
+        page = data['page']
+        url = page['url']
         content = _fetchContent(url, header, triedcount)
         if not content:
             triedcount += 1
@@ -83,7 +82,7 @@ class SingleEditResponse(webapp2.RequestHandler):
                             url='/edit/single/')
             return
 
-        page = _analysePage(oldPage, content)
+        _analysePage(page, content)
 
         callbackurl = data['callbackurl']
         responseData = {

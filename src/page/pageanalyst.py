@@ -1,10 +1,8 @@
 
-from urlparse import urlparse
-
 import lxml
 import pyquery
 
-def _formatTitle(title):
+def formatTitle(title):
     separators = ['_', '|', '-',]
     maxvalue = title
     for separator in separators:
@@ -29,31 +27,22 @@ def getTitle(oldTitle, newTitle):
         return oldTitle
     return newTitle
 
+def getTitleFromDoc(docelement):
+    docquery = pyquery.PyQuery(docelement)
+    title = None
+    items = docquery('head title')
+    if len(items) > 0:
+        title = items[0].text_content()
+    return title
+
 class PageAnalyst(object):
 
-    def analyse(self, content, oldPage):
-        filename = urlparse(oldPage['url']).path.split('/')[-1]
-        detailed = '.' in filename
-
-        htmlelement = lxml.html.fromstring(content)
-        docquery = pyquery.PyQuery(htmlelement)
-
-        title = None
-        items = docquery('head title')
-        if len(items) > 0:
-            title = items[0].text_content()
-        page = {
-            'url': oldPage['url']
-        }
-        oldTitle = oldPage.get('title')
+    def analyse(self, content, page):
+        docelement = lxml.html.fromstring(content)
+        title = getTitleFromDoc(docelement)
         if title:
-            title = _formatTitle(title)
-        if detailed:
+            oldTitle = page.get('title')
+            title = formatTitle(title)
             page['title'] = getTitle(oldTitle, title)
-        else:
-            if oldTitle:
-                page['title'] = '%s: %s' % (oldTitle, title)
-            else:
-                page['title'] = title
         return page
 

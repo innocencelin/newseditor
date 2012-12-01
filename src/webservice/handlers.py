@@ -33,9 +33,9 @@ class TestPage(webapp2.RequestHandler):
                          )
         _, parsedencoding, content = fetcher.fetch()
         if content:
-            oldPage = {'url': url}
+            page = {'url': url}
             analyst = PageAnalyst()
-            page = analyst.analyse(content, oldPage)
+            analyst.analyse(content, page)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {
