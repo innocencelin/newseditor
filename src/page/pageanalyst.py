@@ -1,21 +1,25 @@
+import logging
+import re
 
 import lxml
 import pyquery
 
-def formatTitle(title):
-    separators = ['_', '|', '-',]
+import globalconfig
+
+_PATTERN_MATCH_BODY = re.compile(r'<body[^>]*>(.+)</body>', re.IGNORECASE|re.DOTALL)
+
+def getMaxSentence(separators, title):
     maxvalue = title
     for separator in separators:
         parts = maxvalue.split(separator)
         maxlen = -1
         maxvalue = None
         for part in parts:
+            part = part.strip()
             plen = len(part)
             if plen > maxlen:
                 maxlen = plen
                 maxvalue = part
-        if len(parts) > 1:
-            break
     return maxvalue
 
 def getTitle(oldTitle, newTitle):
@@ -35,14 +39,36 @@ def getTitleFromDoc(docelement):
         title = items[0].text_content()
     return title
 
+def getBodyContent(content):
+    m = _PATTERN_MATCH_BODY.search(content)
+    if m:
+        return m.group(1)
+    return content
+
+def getTitileFromBody(bodyContent, sentence):
+    logging.info(sentence)
+    pattern = '>([^<]*%s[^>]*)<' % (re.escape(sentence), )
+    m = re.search(pattern, bodyContent, re.IGNORECASE|re.DOTALL)
+    if m:
+        return m.group(1)
+    return None
+
 class PageAnalyst(object):
 
-    def analyse(self, content, page):
+    def analyse(self, content, page, separators=[]):
         docelement = lxml.html.fromstring(content)
         title = getTitleFromDoc(docelement)
         if title:
+            if not separators:
+                separators = globalconfig.getTitleSeparators()
+            maxSentence = getMaxSentence(separators, title)
+            bodyContent = getBodyContent(content)
+            bodyTitle = getTitileFromBody(bodyContent, maxSentence)
+            if bodyTitle and len(bodyTitle) < len(title):
+                title = bodyTitle
+            else:
+                title = maxSentence
             oldTitle = page.get('title')
-            title = formatTitle(title)
             page['title'] = getTitle(oldTitle, title)
         return page
 

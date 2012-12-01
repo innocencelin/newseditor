@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 import os
+from page import pageanalyst
 from page import PageAnalyst
 
 class TestPageAnalyst(unittest.TestCase):
@@ -14,11 +15,15 @@ class TestPageAnalyst(unittest.TestCase):
             content = f.read()
         return unicode(content, 'utf-8','ignore')
 
-    def testGetTitle(self):
+    def testBodyTitle(self):
         content = self._loadTestData('base.html')
-        page = {'title': 'title'}
-        PageAnalyst().analyse(content, page)
-        self.assertEquals(page['title'], 'title1')
+
+        bodyContent = pageanalyst.getBodyContent(content)
+        expected = 'body here\n<p>abc (title1) xyz</p>\n'
+        self.assertEquals(bodyContent, expected)
+
+        bodyTitle = pageanalyst.getTitileFromBody(bodyContent, 'title1')
+        self.assertEquals(bodyTitle, 'abc (title1) xyz')
 
 
 if __name__ == '__main__':
