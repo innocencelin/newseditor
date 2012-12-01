@@ -7,6 +7,7 @@ import pyquery
 import globalconfig
 
 _PATTERN_MATCH_BODY = re.compile(r'<body[^>]*>(.+)</body>', re.IGNORECASE|re.DOTALL)
+_PATTERN_TITLE_IN_HEAD = re.compile(r'<head>.*<title>(.*)</title>.*</head>', re.IGNORECASE|re.DOTALL)
 
 def getMaxSentence(separators, title):
     maxvalue = title
@@ -31,7 +32,8 @@ def getTitle(oldTitle, newTitle):
         return oldTitle
     return newTitle
 
-def getTitleFromDoc(docelement):
+def getTitleFromDoc(content):
+    docelement = lxml.html.fromstring(content)
     docquery = pyquery.PyQuery(docelement)
     title = None
     items = docquery('head title')
@@ -46,9 +48,14 @@ def getBodyContent(content):
     return content
 
 def getTitileFromBody(bodyContent, sentence):
-    logging.info(sentence)
     pattern = '>([^<]*%s[^>]*)<' % (re.escape(sentence), )
     m = re.search(pattern, bodyContent, re.IGNORECASE|re.DOTALL)
+    if m:
+        return m.group(1)
+    return None
+
+def getTitleFromHead(content):
+    m = _PATTERN_TITLE_IN_HEAD.search(content)
     if m:
         return m.group(1)
     return None
@@ -56,8 +63,7 @@ def getTitileFromBody(bodyContent, sentence):
 class PageAnalyst(object):
 
     def analyse(self, content, page, separators=[]):
-        docelement = lxml.html.fromstring(content)
-        title = getTitleFromDoc(docelement)
+        title = getTitleFromHead(content)
         if title:
             if not separators:
                 separators = globalconfig.getTitleSeparators()

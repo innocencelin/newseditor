@@ -25,6 +25,16 @@ class TestPageAnalyst(unittest.TestCase):
         bodyTitle = pageanalyst.getTitileFromBody(bodyContent, 'title1')
         self.assertEquals(bodyTitle, 'abc (title1) xyz')
 
+    def testChinaSafety(self):
+        content = self._loadTestData('chinasafety.html')
+        # the comments before DOCTYPE make lxml and pyquery fail to match "head title"
+        title1 = pageanalyst.getTitleFromDoc(content)
+        self.assertIsNone(title1)
+
+        title2 = pageanalyst.getTitleFromHead(content)
+        expected = u'杨栋梁在部分重点煤炭企业主要负责人座谈会上强调：深入贯彻党的十八大精神 以科学发展观为指导 严格落实企业主体责任 强化安全生产基础建设_国家安全监管总局'
+        self.assertEquals(title2, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

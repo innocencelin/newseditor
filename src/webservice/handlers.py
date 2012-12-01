@@ -32,6 +32,7 @@ class TestPage(webapp2.RequestHandler):
                             tried=tried
                          )
         _, parsedencoding, content = fetcher.fetch()
+        page = None
         if content:
             page = {'url': url}
             analyst = PageAnalyst()
