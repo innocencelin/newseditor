@@ -48,7 +48,7 @@ def getBodyContent(content):
     return content
 
 def getTitileFromBody(bodyContent, sentence):
-    pattern = '>([^<]*%s[^>]*)<' % (re.escape(sentence), )
+    pattern = '>([^<>]*%s[^<>]*)<' % (re.escape(sentence), )
     m = re.search(pattern, bodyContent, re.IGNORECASE|re.DOTALL)
     if m:
         return m.group(1)
