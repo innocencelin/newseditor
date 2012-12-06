@@ -9,19 +9,18 @@ import globalconfig
 _PATTERN_MATCH_BODY = re.compile(r'<body[^>]*>(.+)</body>', re.IGNORECASE|re.DOTALL)
 _PATTERN_TITLE_IN_HEAD = re.compile(r'<head>.*<title>(.*)</title>.*</head>', re.IGNORECASE|re.DOTALL)
 
-def getMaxSentence(separators, title):
-    maxvalue = title
-    for separator in separators:
-        parts = maxvalue.split(separator)
-        maxlen = -1
-        maxvalue = None
-        for part in parts:
-            part = part.strip()
-            plen = len(part)
-            if plen > maxlen:
-                maxlen = plen
-                maxvalue = part
-    return maxvalue
+def getTitleParts(separators, title):
+    result = []
+    useparator = separators[0]
+    for separator in separators[1:]:
+        title = title.replace(separator, useparator)
+    parts = title.split(useparator)
+    for part in parts:
+        part = part.strip()
+        plen = len(part)
+        result.append({'l': len(part), 'v': part})
+    result.sort(key=lambda k: k['l'], reverse=True)
+    return result[:2]
 
 def getTitle(oldTitle, newTitle):
     if not oldTitle:
@@ -49,10 +48,22 @@ def getBodyContent(content):
 
 def getTitileFromBody(bodyContent, sentence):
     pattern = '>([^<>]*%s[^<>]*)<' % (re.escape(sentence), )
-    m = re.search(pattern, bodyContent, re.IGNORECASE|re.DOTALL)
-    if m:
-        return m.group(1)
-    return None
+    minlen = 0
+    minvalue = None
+    slen = len(sentence)
+    for m in re.finditer(pattern, bodyContent, re.IGNORECASE|re.DOTALL):
+        value = m.group(1).strip()
+        if not minvalue:
+            minvalue = value
+            minlen = len(value)
+        else:
+            vlen = len(value)
+            if vlen < minlen:
+                minlen = vlen
+                minvalue = value
+        if minlen == slen:
+            break
+    return minvalue
 
 def getTitleFromHead(content):
     m = _PATTERN_TITLE_IN_HEAD.search(content)
@@ -62,19 +73,28 @@ def getTitleFromHead(content):
 
 class PageAnalyst(object):
 
-    def analyse(self, content, page, separators=[]):
+    def analyse(self, content, page, separators=''):
+        oldTitle = page.get('title')
         title = getTitleFromHead(content)
+        if oldTitle and oldTitle in title:
+            return page
         if title:
             if not separators:
                 separators = globalconfig.getTitleSeparators()
-            maxSentence = getMaxSentence(separators, title)
-            bodyContent = getBodyContent(content)
-            bodyTitle = getTitileFromBody(bodyContent, maxSentence)
-            if bodyTitle and len(bodyTitle) < len(title):
-                title = bodyTitle
+            found = False
+            if oldTitle:
+                halfLen = len(oldTitle) / 2
             else:
-                title = maxSentence
-            oldTitle = page.get('title')
-            page['title'] = getTitle(oldTitle, title)
+                halfLen = 0
+            bodyContent = getBodyContent(content)
+            titleParts = getTitleParts(separators, title)
+            for titlePart in titleParts:
+                bodyTitle = getTitileFromBody(bodyContent, titlePart['v'])
+                if bodyTitle and len(bodyTitle) > halfLen:
+                    page['title'] = bodyTitle
+                    found = True
+                    break
+            if not found:
+                page['title'] = getTitle(oldTitle, titleParts[0]['v'])
         return page
 

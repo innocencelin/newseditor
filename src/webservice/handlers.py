@@ -22,6 +22,7 @@ class TestPage(webapp2.RequestHandler):
 
     def post(self):
         url = self.request.get('url')
+        title = self.request.get('title')
         httpheader = self.request.get('httpheader')
         header = None
         if httpheader:
@@ -34,13 +35,14 @@ class TestPage(webapp2.RequestHandler):
         _, parsedencoding, content = fetcher.fetch()
         page = None
         if content:
-            page = {'url': url}
+            page = {'url': url, 'title': title}
             analyst = PageAnalyst()
             analyst.analyse(content, page)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {
             'url': url,
+            'title': title,
             'httpheader': httpheader,
             'parsedencoding': parsedencoding,
             'content': content,

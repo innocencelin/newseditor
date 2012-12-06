@@ -35,6 +35,15 @@ class TestPageAnalyst(unittest.TestCase):
         expected = u'杨栋梁在部分重点煤炭企业主要负责人座谈会上强调：深入贯彻党的十八大精神 以科学发展观为指导 严格落实企业主体责任 强化安全生产基础建设_国家安全监管总局'
         self.assertEquals(title2, expected)
 
+    def testTitle(self):
+        content = self._loadTestData('base.html')
+
+        p = PageAnalyst()
+        page = {'title': 'oldTitle'}
+        p.analyse(content, page, separators=u'-_|')
+        expected = 'abc (title1) xyz'
+        self.assertEquals(page['title'], expected)
+
 
 if __name__ == '__main__':
     unittest.main()
