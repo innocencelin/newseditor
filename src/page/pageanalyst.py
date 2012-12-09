@@ -7,7 +7,7 @@ import pyquery
 import globalconfig
 
 _PATTERN_MATCH_BODY = re.compile(r'<body[^>]*>(.+)</body>', re.IGNORECASE|re.DOTALL)
-_PATTERN_TITLE_IN_HEAD = re.compile(r'<head>.*<title>(.*)</title>.*</head>', re.IGNORECASE|re.DOTALL)
+_PATTERN_TITLE_IN_HEAD = re.compile(r'<head[^>]*>.*<title[^>]*>(.*)</title>.*</head>', re.IGNORECASE|re.DOTALL)
 
 def getTitleParts(separators, title):
     result = []
@@ -76,9 +76,9 @@ class PageAnalyst(object):
     def analyse(self, content, page, separators=''):
         oldTitle = page.get('title')
         title = getTitleFromHead(content)
-        if oldTitle and oldTitle in title:
-            return page
         if title:
+            if oldTitle and oldTitle in title:
+                return page
             if not separators:
                 separators = globalconfig.getTitleSeparators()
             found = False
@@ -96,5 +96,7 @@ class PageAnalyst(object):
                     break
             if not found:
                 page['title'] = getTitle(oldTitle, titleParts[0]['v'])
+        else:
+            logging.error('Failed to parse title from head: %s.' % (page, ))
         return page
 
