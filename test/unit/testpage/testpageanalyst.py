@@ -4,10 +4,7 @@ import os
 from page import pageanalyst
 from page import PageAnalyst
 
-class TestPageAnalyst(unittest.TestCase):
-
-    def setUp(self):
-        pass
+class BaseTestCase(unittest.TestCase):
 
     def _loadTestData(self, filename):
         filepath = os.path.join(os.path.dirname(__file__), 'data', filename)
@@ -15,15 +12,24 @@ class TestPageAnalyst(unittest.TestCase):
             content = f.read()
         return unicode(content, 'utf-8','ignore')
 
+
+
+class TestBase(BaseTestCase):
+
     def testBodyTitle(self):
         content = self._loadTestData('base.html')
 
         bodyContent = pageanalyst.getBodyContent(content)
-        expected = 'body here\n<p>abc (title1) xyz</p>\n'
+        expected = 'body here\n<p>abc (title1) xyz\nhaha</p>\n<p>Old Title In Body\nhaha</p>\n'
         self.assertEquals(bodyContent, expected)
 
         bodyTitle = pageanalyst.getTitileFromBody(bodyContent, 'title1')
         self.assertEquals(bodyTitle, 'abc (title1) xyz')
+
+class TestTitle(BaseTestCase):
+
+    def setUp(self):
+        pass
 
     def testChinaSafety(self):
         content = self._loadTestData('chinasafety.html')
@@ -45,6 +51,62 @@ class TestPageAnalyst(unittest.TestCase):
         self.assertEquals(page['title'], expected)
 
 
+class TestOldTitle(BaseTestCase):
+    def atestOldTitleInHead(self):
+        content = self._loadTestData('base.html')
+
+        p = PageAnalyst()
+        oldTitle = 'a-(title1)'
+        page = {'title': oldTitle}
+        p.analyse(content, page, separators=u'-_|')
+        self.assertEquals(page['title'], oldTitle)
+
+    def testOldTitleInBody(self):
+        content = self._loadTestData('base.html')
+
+        p = PageAnalyst()
+        oldTitle = 'Old Title In Body'
+        page = {'title': oldTitle}
+        p.analyse(content, page, separators=u'-_|')
+        self.assertEquals(page['title'], oldTitle)
+
+class TestNoHead(BaseTestCase):
+
+    def testNoHead(self):
+        content = self._loadTestData('base-nohead.html')
+
+        title = pageanalyst.getTitleFromHead(content)
+        self.assertIsNone(title)
+
+    def testNoHeadTitle(self):
+        content = self._loadTestData('base-nohead.html')
+
+        p = PageAnalyst()
+        oldTitle = 'oldTitle'
+        page = {'title': oldTitle}
+        p.analyse(content, page, separators=u'-_|')
+        self.assertEquals(page['title'], oldTitle)
+
+
+class TestNoBody(BaseTestCase):
+
+    def testNoBody(self):
+        content = self._loadTestData('base-nobody.html')
+
+        body = pageanalyst.getBodyContent(content)
+        self.assertIsNone(body)
+
+    def testNoBodyTitle(self):
+        content = self._loadTestData('base-nobody.html')
+
+        p = PageAnalyst()
+        page = {'title': 'oldTitle'}
+        p.analyse(content, page, separators=u'-_|')
+        expected = '(title1)'
+        self.assertEquals(page['title'], expected)
+
 if __name__ == '__main__':
     unittest.main()
+    # suite = unittest.TestLoader().loadTestsFromTestCase(TestOldTitle)
+    # unittest.TextTestRunner().run(suite)
 
