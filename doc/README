@@ -1,5 +1,5 @@
 python $HOME/bin/google_appengine/appcfg.py  --help
-python $HOME/bin/google_appengine/appcfg.py update $HOME/workspace-gae/newseditor/src
+python $HOME/bin/google_appengine/appcfg.py --no_cookies update $HOME/workspace-gae/newseditor/src
 
 # Upload by GoAgent uploader
 export uploaddir=$HOME/workspace-gae/newseditor/src

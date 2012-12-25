@@ -9,7 +9,7 @@ import globalconfig
 _PATTERN_MATCH_BODY = re.compile(r'<body[^>]*>(.+)</body>', re.IGNORECASE|re.DOTALL)
 _PATTERN_TITLE_IN_HEAD = re.compile(r'<head[^>]*>.*<title[^>]*>(.*)</title>.*</head>', re.IGNORECASE|re.DOTALL)
 
-def getMainTitle(url, separators, title):
+def getMainTitles(url, separators, title):
     useparator = separators[0]
     for separator in separators[1:]:
         title = title.replace(separator, useparator)
@@ -20,9 +20,7 @@ def getMainTitle(url, separators, title):
         if not globalconfig.isConstantTitle(url, part):
             mainTitles.append(part)
     mainTitles.sort(key=lambda k: len(k), reverse=True)
-    if mainTitles:
-        return mainTitles[0]
-    return None
+    return mainTitles[:2]
 
 def getTitleFromDoc(content):
     docelement = lxml.html.fromstring(content)
@@ -45,7 +43,7 @@ def getBodyContent(content):
         return m.group(1)
     return None
 
-def getTitileFromBody(bodyContent, sentence):
+def getTitleFromBody(bodyContent, sentence):
     pattern = '>([^<>]*%s[^<>]*)<' % (re.escape(sentence), )
     minlen = 0
     minvalue = None
@@ -84,25 +82,26 @@ class PageAnalyst(object):
 
         if not separators:
             separators = globalconfig.getTitleSeparators()
-        mainTitle = getMainTitle(url, separators, title)
+        mainTitles = getMainTitles(url, separators, title)
         bodyContent = getBodyContent(content)
         if not bodyContent:
             logging.error('Failed to get body content: %s.' % (page, ))
-            if mainTitle:
-                page['title'] = mainTitle
+            if mainTitles:
+                page['title'] = mainTitles[0]
             return page
 
         if oldTitle:
-            bodyTitle = getTitileFromBody(bodyContent, oldTitle)
+            bodyTitle = getTitleFromBody(bodyContent, oldTitle)
             if bodyTitle:
                 return page
 
-        if mainTitle:
-            bodyTitle = getTitileFromBody(bodyContent, mainTitle)
-            if bodyTitle:
-                page['title'] = bodyTitle
-            else:
-                page['title'] = mainTitle
+        if mainTitles:
+            for mainTitle in mainTitles:
+                bodyTitle = getTitleFromBody(bodyContent, mainTitle)
+                if bodyTitle:
+                    page['title'] = bodyTitle
+                    return
+            page['title'] = mainTitles[0]
         else:
             # TODO: how to get a title like element without any tip?
             logging.error('There is no main title in head: %s.' % (page, ))
