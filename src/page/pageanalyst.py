@@ -101,7 +101,8 @@ class PageAnalyst(object):
                 if bodyTitle:
                     page['title'] = bodyTitle
                     return
-            page['title'] = mainTitles[0]
+            if not oldTitle:
+                page['title'] = mainTitles[0]
         else:
             # TODO: how to get a title like element without any tip?
             logging.error('There is no main title in head: %s.' % (page, ))
