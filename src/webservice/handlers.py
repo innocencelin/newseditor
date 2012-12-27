@@ -17,12 +17,14 @@ class TestPage(webapp2.RequestHandler):
 
     def get(self):
         templateValues = {
+            'fortest': True,
         }
         self._render(templateValues)
 
     def post(self):
         url = self.request.get('url')
         title = self.request.get('title')
+        fortest = bool(self.request.get('fortest'))
         httpheader = self.request.get('httpheader')
         header = None
         if httpheader:
@@ -37,12 +39,13 @@ class TestPage(webapp2.RequestHandler):
         if content:
             page = {'url': url, 'title': title}
             analyst = PageAnalyst()
-            analyst.analyse(content, page)
+            analyst.analyse(content, page, fortest=fortest)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {
             'url': url,
             'title': title,
+            'fortest': fortest,
             'httpheader': httpheader,
             'parsedencoding': parsedencoding,
             'content': content,

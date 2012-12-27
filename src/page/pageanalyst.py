@@ -9,7 +9,7 @@ import globalconfig
 _PATTERN_MATCH_BODY = re.compile(r'<body[^>]*>(.+)</body>', re.IGNORECASE|re.DOTALL)
 _PATTERN_TITLE_IN_HEAD = re.compile(r'<head[^>]*>.*<title[^>]*>(.*)</title>.*</head>', re.IGNORECASE|re.DOTALL)
 
-def getMainTitles(url, separators, title):
+def getMainTitles(url, separators, title, sideEffect):
     useparator = separators[0]
     for separator in separators[1:]:
         title = title.replace(separator, useparator)
@@ -17,7 +17,7 @@ def getMainTitles(url, separators, title):
     mainTitles = []
     for part in parts:
         part = part.strip()
-        if not globalconfig.isConstantTitle(url, part):
+        if not globalconfig.isConstantTitle(url, part, sideEffect):
             mainTitles.append(part)
     mainTitles.sort(key=lambda k: len(k), reverse=True)
     return mainTitles[:2]
@@ -69,7 +69,7 @@ def getTitleFromBody(bodyContent, sentence):
 
 class PageAnalyst(object):
 
-    def analyse(self, content, page, separators=''):
+    def analyse(self, content, page, separators='', fortest=False):
         oldTitle = page.get('title')
         url = page.get('url')
         title = getTitleFromHead(content)
@@ -82,7 +82,7 @@ class PageAnalyst(object):
 
         if not separators:
             separators = globalconfig.getTitleSeparators()
-        mainTitles = getMainTitles(url, separators, title)
+        mainTitles = getMainTitles(url, separators, title, not fortest)
         bodyContent = getBodyContent(content)
         if not bodyContent:
             logging.error('Failed to get body content: %s.' % (page, ))

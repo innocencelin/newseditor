@@ -19,7 +19,7 @@ def getConstantTitleOccurrence():
 def getConstantTitleCacheDay():
     return cmapi.getItemValue('constanttitlecacheday', 7)
 
-def isConstantTitle(url, title):
+def isConstantTitle(url, title, sideEffect):
     if not url:
         return False
     netloc = urlparse.urlparse(url).netloc
@@ -30,15 +30,15 @@ def isConstantTitle(url, title):
         record = {}
     count = record.get('c', 0)
     isconstant = count >= getConstantTitleOccurrence()
-
-    nnow = datetime.datetime.utcnow()
-    record['c'] = count + 1
-    record['u'] = nnow
-    if len(value) > 20:
-        for ik, iv in value.items():
-            if (nnow - iv['u']).days >= getConstantTitleCacheDay():
-                del value[ik]
-    value[title] = record
-    success = cmapi.saveItem(key, value, modelname=PageConstantTitle)
+    if sideEffect:
+        nnow = datetime.datetime.utcnow()
+        record['c'] = count + 1
+        record['u'] = nnow
+        if len(value) > 20:
+            for ik, iv in value.items():
+                if (nnow - iv['u']).days >= getConstantTitleCacheDay():
+                    del value[ik]
+        value[title] = record
+        success = cmapi.saveItem(key, value, modelname=PageConstantTitle)
     return isconstant
 
