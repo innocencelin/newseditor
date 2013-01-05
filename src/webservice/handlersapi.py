@@ -80,9 +80,9 @@ class SingleEditResponse(webapp2.RequestHandler):
                 data['triedcount'] = triedcount
                 taskqueue.add(queue_name="default", payload=json.dumps(data),
                             url='/edit/single/')
-            return
-
-        _analysePage(page, content)
+                return
+        if content:
+            _analysePage(page, content)
 
         callbackurl = data['callbackurl']
         responseData = {
@@ -101,10 +101,8 @@ class SingleEditResponse(webapp2.RequestHandler):
             self.response.out.write(message)
             if leftcount > 0:
                 time.sleep(2)
-        if not doCallback:
-            return
-
-        message = 'Push %s back to %s.' % (url, callbackurl)
-        logging.info(message)
-        self.response.out.write(message)
+        if doCallback:
+            message = 'Push %s back to %s.' % (url, callbackurl)
+            logging.info(message)
+            self.response.out.write(message)
 
