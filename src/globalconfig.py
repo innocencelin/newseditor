@@ -42,3 +42,6 @@ def isConstantTitle(url, title, sideEffect):
         success = cmapi.saveItem(key, value, modelname=PageConstantTitle)
     return isconstant
 
+def getPublishedFormats():
+    return cmapi.getItemValue('published.formats', [])
+

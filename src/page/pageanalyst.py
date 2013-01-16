@@ -1,3 +1,5 @@
+﻿# coding=utf-8
+
 import logging
 import re
 
@@ -67,9 +69,44 @@ def getTitleFromBody(bodyContent, sentence):
             minvalue = m.group(0).strip()
     return minvalue
 
+def _getPublished(content):
+    publishedFormats = globalconfig.getPublishedFormats()
+    for publishedFormat in publishedFormats:
+        pattern = publishedFormat.get('pattern')
+        format = publishedFormat.get('format')
+        if not pattern or not format:
+            continue
+
+        m = re.search(pattern, content)
+        if m:
+            data = m.groupdict()
+
+            month = data.get('month')
+            if month and len(month) < 2:
+                data['month'] = '0' + month
+
+            hour = data.get('hour')
+            if hour and len(hour) < 2:
+                data['hour'] = '0' + hour
+
+            minute = data.get('minute')
+            if minute and len(minute) < 2:
+                data['minute'] = '0' + minute
+
+            second = data.get('second')
+            if second and len(second) < 2:
+                data['second'] = '0' + second
+
+            return format % data
+
+    return None
+
 class PageAnalyst(object):
 
     def analyse(self, content, page, separators='', fortest=False):
+        published = _getPublished(content)
+        if published:
+            page['published'] = published
         oldTitle = page.get('title')
         url = page.get('url')
         title = getTitleFromHead(content)
@@ -98,7 +135,7 @@ class PageAnalyst(object):
         if mainTitles:
             for mainTitle in mainTitles:
                 bodyTitle = getTitleFromBody(bodyContent, mainTitle)
-                if bodyTitle:
+                if bodyTitle and len(bodyTitle) <= len(title):
                     page['title'] = bodyTitle
                     return
             if not oldTitle:
