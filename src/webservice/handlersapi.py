@@ -14,12 +14,6 @@ _URL_TIMEOUT = 30
 _FETCH_TRYCOUNT = 3
 _CALLBACK_TRYCOUNT = 3
 
-def _fetchContent(url, header, triedcount):
-    fetcher = ContentFetcher(url, header=header,
-                                tried=triedcount)
-    _, _, content = fetcher.fetch()
-    return content
-
 def _analysePage(page, content):
     analyst = PageAnalyst()
     analyst.analyse(content, page)
@@ -68,7 +62,12 @@ class SingleEditResponse(webapp2.RequestHandler):
         header = data['header']
         page = data['page']
         url = page['url']
-        content = _fetchContent(url, header, triedcount)
+
+        fetcher = ContentFetcher(url, header=header,
+                                    tried=triedcount)
+        fetchResult = fetcher.fetch()
+        usedUrl = fetchResult.get('url')
+        content = fetchResult.get('content')
         if not content:
             triedcount += 1
             leftcount = _FETCH_TRYCOUNT - triedcount
@@ -82,6 +81,8 @@ class SingleEditResponse(webapp2.RequestHandler):
                             url='/edit/single/')
                 return
         if content:
+            if usedUrl != url:
+                page['url'] = usedUrl
             _analysePage(page, content)
 
         callbackurl = data['callbackurl']

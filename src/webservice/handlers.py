@@ -34,10 +34,11 @@ class TestPage(webapp2.RequestHandler):
                             header=header,
                             tried=tried
                          )
-        _, parsedencoding, content = fetcher.fetch()
+        fetchResult = fetcher.fetch()
+        content = fetchResult.get('content')
         page = None
         if content:
-            page = {'url': url, 'title': title}
+            page = {'url': fetchResult.get('url'), 'title': title}
             analyst = PageAnalyst()
             analyst.analyse(content, page, fortest=fortest)
         if header:
@@ -47,8 +48,10 @@ class TestPage(webapp2.RequestHandler):
             'title': title,
             'fortest': fortest,
             'httpheader': httpheader,
-            'parsedencoding': parsedencoding,
-            'content': content,
+            'encoding': fetchResult.get('encoding'),
+            'encodingSrc': fetchResult.get('encoding.src'),
+            'oldContent': fetchResult.get('content.old'),
+            'content': fetchResult.get('content'),
             'page': page,
         }
         self._render(templateValues)

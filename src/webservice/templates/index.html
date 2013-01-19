@@ -10,12 +10,14 @@
     For test: <input type="checkbox" name="fortest" {% if fortest %} checked {% endif %}/>
     <br/>Header:
     <br/><textarea name="httpheader" rows="3" cols="130">{{ httpheader }}</textarea>
-    <br/>Parsed encoding: {{ parsedencoding }}
+    <br/>Encoding: {{ encoding }}, from {{ encodingSrc }}
+    {% if oldContent %}<pre>{{ oldContent }}</pre>{% endif %}
     <br/>Content:
     <br/><textarea name="content" rows="10" cols="130">{{ content }}</textarea>
     <input type="submit" name="action" value="Submit" />
     </form>
     <br/>Title: {{ page.title }}
+    <br/>Url: {{ page.url }}
     <br/>{% if page.published %}{{ page.published }}{% endif %}
     <br/> {{ page }}
   </body>
