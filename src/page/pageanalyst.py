@@ -94,9 +94,11 @@ def _getPublished(content):
                 data['minute'] = '0' + minute
 
             second = data.get('second')
-            if second and len(second) < 2:
-                data['second'] = '0' + second
-
+            if second:
+                if len(second) < 2:
+                    data['second'] = '0' + second
+            else:
+                data['second'] = '00'
             return format % data
 
     return None
