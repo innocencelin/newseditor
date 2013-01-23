@@ -61,29 +61,33 @@ class SingleEditResponse(webapp2.RequestHandler):
         triedcount = data.get('triedcount', 0)
         header = data['header']
         page = data['page']
-        url = page['url']
+        url = page.get('url')
 
-        fetcher = ContentFetcher(url, header=header,
-                                    tried=triedcount)
-        fetchResult = fetcher.fetch()
-        usedUrl = fetchResult.get('url')
-        content = fetchResult.get('content')
-        if not content:
-            triedcount += 1
-            leftcount = _FETCH_TRYCOUNT - triedcount
-            message = 'Failed to fetch content form %s, lefted: %s.' % (
-                        url, leftcount, )
+        if url:
+            fetcher = ContentFetcher(url, header=header,
+                                        tried=triedcount)
+            fetchResult = fetcher.fetch()
+            usedUrl = fetchResult.get('url')
+            content = fetchResult.get('content')
+            if not content:
+                triedcount += 1
+                leftcount = _FETCH_TRYCOUNT - triedcount
+                message = 'Failed to fetch content form %s, lefted: %s.' % (
+                            url, leftcount, )
+                logging.error(message)
+                self.response.out.write(message)
+                if leftcount > 0:
+                    data['triedcount'] = triedcount
+                    taskqueue.add(queue_name="default", payload=json.dumps(data),
+                                url='/edit/single/')
+                    return
+            if content:
+                page['url'] = usedUrl
+                _analysePage(page, content)
+        else:
+            message = 'No url in data: %s.' % (data, )
             logging.error(message)
             self.response.out.write(message)
-            if leftcount > 0:
-                data['triedcount'] = triedcount
-                taskqueue.add(queue_name="default", payload=json.dumps(data),
-                            url='/edit/single/')
-                return
-        if content:
-            if usedUrl != url:
-                page['url'] = usedUrl
-            _analysePage(page, content)
 
         callbackurl = data['callbackurl']
         responseData = {
