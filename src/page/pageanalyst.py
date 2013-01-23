@@ -111,17 +111,17 @@ class PageAnalyst(object):
             page['published'] = published
         oldTitle = page.get('title')
         url = page.get('url')
-        title = getTitleFromHead(content)
-        if not title:
+        headTitle = getTitleFromHead(content)
+        if not headTitle:
             logging.error('Failed to parse title from head: %s.' % (page, ))
             return page
 
-        if oldTitle and oldTitle in title:
+        if oldTitle and oldTitle in headTitle:
             return page
 
         if not separators:
             separators = globalconfig.getTitleSeparators()
-        mainTitles = getMainTitles(url, separators, title, not fortest)
+        mainTitles = getMainTitles(url, separators, headTitle, not fortest)
         bodyContent = getBodyContent(content)
         if not bodyContent:
             logging.error('Failed to get body content: %s.' % (page, ))
@@ -137,7 +137,7 @@ class PageAnalyst(object):
         if mainTitles:
             for mainTitle in mainTitles:
                 bodyTitle = getTitleFromBody(bodyContent, mainTitle)
-                if bodyTitle and len(bodyTitle) <= len(title):
+                if bodyTitle and len(bodyTitle) <= len(headTitle):
                     page['title'] = bodyTitle
                     return
             if not oldTitle:
@@ -145,5 +145,7 @@ class PageAnalyst(object):
         else:
             # TODO: how to get a title like element without any tip?
             logging.error('There is no main title in head: %s.' % (page, ))
+            if not oldTitle:
+                page['title'] = headTitle
         return page
 
