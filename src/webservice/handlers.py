@@ -24,21 +24,26 @@ class TestPage(webapp2.RequestHandler):
     def post(self):
         url = self.request.get('url')
         title = self.request.get('title')
+        fetchResult = {}
+        content = None
+        page = None
         fortest = bool(self.request.get('fortest'))
         httpheader = self.request.get('httpheader')
         header = None
         if httpheader:
             header = json.loads(httpheader)
-        tried = 2 # the max try count is 3
-        fetcher = ContentFetcher(url,
-                            header=header,
-                            tried=tried
-                         )
-        fetchResult = fetcher.fetch()
-        content = fetchResult.get('content')
-        page = None
+        if url:
+            tried = 2 # the max try count is 3
+            fetcher = ContentFetcher(url,
+                                header=header,
+                                tried=tried
+                             )
+            fetchResult = fetcher.fetch()
+            content = fetchResult.get('content')
         if content:
-            page = {'url': fetchResult.get('url'), 'title': title}
+            page = {'url': fetchResult.get('url')}
+            if title:
+                page['title'] = title
             analyst = PageAnalyst()
             analyst.analyse(content, page, fortest=fortest)
         if header:

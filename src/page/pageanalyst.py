@@ -103,49 +103,39 @@ def _getPublished(content):
 
     return None
 
+def _getTitle(url, content, separators, fortest):
+    headTitle = getTitleFromHead(content)
+    if not headTitle:
+        logging.error('Failed to parse title from head: %s.' % (page, ))
+        return
+
+    if not separators:
+        separators = globalconfig.getTitleSeparators()
+    mainTitles = getMainTitles(url, separators, headTitle, not fortest)
+
+    if not mainTitles:
+        return headTitle
+
+    bodyContent = getBodyContent(content)
+    if not bodyContent:
+        logging.error('Failed to get body content: %s.' % (page, ))
+        return mainTitles[0]
+
+    for mainTitle in mainTitles:
+        bodyTitle = getTitleFromBody(bodyContent, mainTitle)
+        if bodyTitle and len(bodyTitle) <= len(headTitle):
+            return bodyTitle
+    return mainTitles[0]
+
 class PageAnalyst(object):
 
     def analyse(self, content, page, separators='', fortest=False):
         published = _getPublished(content)
         if published:
             page['published'] = published
-        oldTitle = page.get('title')
         url = page.get('url')
-        headTitle = getTitleFromHead(content)
-        if not headTitle:
-            logging.error('Failed to parse title from head: %s.' % (page, ))
-            return page
-
-        if oldTitle and oldTitle in headTitle:
-            return page
-
-        if not separators:
-            separators = globalconfig.getTitleSeparators()
-        mainTitles = getMainTitles(url, separators, headTitle, not fortest)
-        bodyContent = getBodyContent(content)
-        if not bodyContent:
-            logging.error('Failed to get body content: %s.' % (page, ))
-            if mainTitles:
-                page['title'] = mainTitles[0]
-            return page
-
-        if oldTitle:
-            bodyTitle = getTitleFromBody(bodyContent, oldTitle)
-            if bodyTitle:
-                return page
-
-        if mainTitles:
-            for mainTitle in mainTitles:
-                bodyTitle = getTitleFromBody(bodyContent, mainTitle)
-                if bodyTitle and len(bodyTitle) <= len(headTitle):
-                    page['title'] = bodyTitle
-                    return
-            if not oldTitle:
-                page['title'] = mainTitles[0]
-        else:
-            # TODO: how to get a title like element without any tip?
-            logging.error('There is no main title in head: %s.' % (page, ))
-            if not oldTitle:
-                page['title'] = headTitle
+        title = _getTitle(url, content, separators, fortest)
+        if title:
+            page['title2'] = title
         return page
 
