@@ -127,9 +127,72 @@ def _getTitle(url, content, separators, fortest):
             return bodyTitle
     return mainTitles[0]
 
+
+def _getMainScope(docelement):
+    docquery = pyquery.PyQuery(docelement)
+    title = None
+    items = docquery('p')
+    result = {}
+    for item in items:
+        text = item.text_content()
+        if not text:
+            continue
+        parent = item.getparent()
+        size = result.get(parent)
+        if size:
+            result[parent] += len(text)
+        else:
+            result[parent] = len(text)
+    maxsize = 0
+    maxparent = None
+    for parent, size in result.items():
+        if size > maxsize:
+            maxsize = size
+            maxparent = parent
+    if maxparent:
+        mainstart = maxparent.sourceline
+        next = maxparent.getnext()
+        if next:
+            mainend = next.sourceline
+        else:
+            mainend = -1
+        return mainstart, mainend
+    return None, None
+
+def _getParagraphs(content, sentenceFormat):
+    if not sentenceFormat:
+        sentenceFormat = globalconfig.getSentenceFormat()
+    docelement = lxml.html.fromstring(content)
+    mainstart, mainend = _getMainScope(docelement)
+    if not mainstart:
+        return None
+    docquery = pyquery.PyQuery(docelement)
+    title = None
+    items = docquery('p')
+    result = []
+    sentenceEnds = sentenceFormat.get('end')
+    sentenceContains = sentenceFormat.get('contain')
+    for item in items:
+        if item.sourceline < mainstart or (mainend > 0 and item.sourceline > mainend):
+            continue
+        text = item.text_content()
+        if text:
+            text = text.strip()
+        if not text:
+            continue
+        lastCharacter = text[-1]
+        if lastCharacter in sentenceFormat:
+            result.append(text)
+            continue
+        for sentenceContain in sentenceContains:
+            if sentenceContain in text:
+                result.append(text)
+                break
+    return result
+
 class PageAnalyst(object):
 
-    def analyse(self, content, page, separators='', fortest=False):
+    def analyse(self, content, page, separators='', sentenceFormat=None, fortest=False):
         published = _getPublished(content)
         if published:
             page['published'] = published
@@ -137,5 +200,10 @@ class PageAnalyst(object):
         title = _getTitle(url, content, separators, fortest)
         if title:
             page['title2'] = title
+        paragraphs = _getParagraphs(content, sentenceFormat)
+        if paragraphs:
+            page['first'] = paragraphs[0]
+            if len(paragraphs) > 1:
+                page['last'] = paragraphs[-1]
         return page
 

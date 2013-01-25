@@ -19,8 +19,10 @@
     <br/>Title: {{ page.title }}
     <br/>Title2: {{ page.title2 }}
     <br/>Url: {{ page.url }}
-    <br/>{% if page.published %}{{ page.published }}{% endif %}
-    <br/> {{ page }}
+    {% if page.published %}<br/>{{ page.published }}{% endif %}
+    {% if page.first %}<br/><br/>First: {{ page.first }}{% endif %}
+    {% if page.last %}<br/><br/>Last: {{ page.last }}{% endif %}
+    <br/><br/>{{ page }}
   </body>
 </html>
 

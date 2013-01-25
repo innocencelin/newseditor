@@ -11,13 +11,19 @@ class PageConstantTitle(configmanager.models.ConfigItem):
 cmapi.registerModel(PageConstantTitle)
 
 def getTitleSeparators():
-    return cmapi.getItemValue('titleseparator', '_|-')
+    return cmapi.getItemValue('title.separator', '_|-')
+
+def getSentenceFormat():
+    return cmapi.getItemValue('sentence.format', {
+        'end': '.!',
+        'contain': ['. ', '! ']
+    })
 
 def getConstantTitleOccurrence():
-    return cmapi.getItemValue('constanttitleoccurrence', 1)
+    return cmapi.getItemValue('constant.title.occurrence', 1)
 
 def getConstantTitleCacheDay():
-    return cmapi.getItemValue('constanttitlecacheday', 7)
+    return cmapi.getItemValue('constant.title.cache.day', 7)
 
 def isConstantTitle(url, title, sideEffect):
     if not url:
