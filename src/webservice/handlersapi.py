@@ -8,15 +8,11 @@ from google.appengine.api import taskqueue
 import webapp2
 
 from contentfetcher import ContentFetcher
-from page import PageAnalyst
+from page import pageanalyst
 
 _URL_TIMEOUT = 30
 _FETCH_TRYCOUNT = 3
 _CALLBACK_TRYCOUNT = 3
-
-def _analysePage(page, content):
-    analyst = PageAnalyst()
-    analyst.analyse(content, page)
 
 def _pushItemsBack(callbackurl, responseData):
     try:
@@ -61,6 +57,7 @@ class SingleEditResponse(webapp2.RequestHandler):
         triedcount = data.get('triedcount', 0)
         header = data['header']
         page = data['page']
+        editedPage = None
         url = page.get('url')
 
         if url:
@@ -83,7 +80,7 @@ class SingleEditResponse(webapp2.RequestHandler):
                     return
             if content:
                 page['url'] = usedUrl
-                _analysePage(page, content)
+                editedPage = pageanalyst.analyse(page, content, fortest=fortest)
         else:
             message = 'No url in data: %s.' % (data, )
             logging.error(message)
@@ -92,7 +89,7 @@ class SingleEditResponse(webapp2.RequestHandler):
         callbackurl = data['callbackurl']
         responseData = {
                 'origin': data['origin'],
-                'items': [page],
+                'items': [editedPage if editedPage else page],
         }
         doCallback = False
         for i in range(_CALLBACK_TRYCOUNT):

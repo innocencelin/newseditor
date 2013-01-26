@@ -16,13 +16,7 @@
     <br/><textarea name="content" rows="10" cols="130">{{ content }}</textarea>
     <input type="submit" name="action" value="Submit" />
     </form>
-    <br/>Title: {{ page.title }}
-    <br/>Title2: {{ page.title2 }}
-    <br/>Url: {{ page.url }}
-    {% if page.published %}<br/>{{ page.published }}{% endif %}
-    {% if page.first %}<br/><br/>First: {{ page.first }}{% endif %}
-    {% if page.last %}<br/><br/>Last: {{ page.last }}{% endif %}
-    <br/><br/>{{ page }}
+    <pre>{{ page }}</pre>
   </body>
 </html>
 

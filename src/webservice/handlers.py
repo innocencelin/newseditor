@@ -2,11 +2,11 @@ import json
 import os
 
 from google.appengine.ext.webapp import template
-
 import webapp2
 
+from commonutil import jsonutil
 from contentfetcher import ContentFetcher
-from page import PageAnalyst
+from page import pageanalyst
 
 class TestPage(webapp2.RequestHandler):
 
@@ -44,8 +44,7 @@ class TestPage(webapp2.RequestHandler):
             page = {'url': fetchResult.get('url')}
             if title:
                 page['title'] = title
-            analyst = PageAnalyst()
-            analyst.analyse(content, page, fortest=fortest)
+            page = pageanalyst.analyse(page, content, fortest=fortest)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {
@@ -57,7 +56,7 @@ class TestPage(webapp2.RequestHandler):
             'encodingSrc': fetchResult.get('encoding.src'),
             'oldContent': fetchResult.get('content.old'),
             'content': fetchResult.get('content'),
-            'page': page,
+            'page': jsonutil.getReadableString(page),
         }
         self._render(templateValues)
 
