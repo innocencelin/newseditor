@@ -16,7 +16,8 @@
     <br/><textarea name="content" rows="10" cols="130">{{ content }}</textarea>
     <input type="submit" name="action" value="Submit" />
     </form>
-    <pre>{{ page }}</pre>
+    <pre>{{ pagestr }}</pre>
+  {% if page.img %}<img src="{{ page.img.url }}" width="{{ page.img.width }}" height="{{ page.img.height }}"/> {% endif %}
   </body>
 </html>
 

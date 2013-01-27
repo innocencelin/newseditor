@@ -44,7 +44,7 @@ class TestPage(webapp2.RequestHandler):
             page = {'url': fetchResult.get('url')}
             if title:
                 page['title'] = title
-            page = pageanalyst.analyse(page, content, fortest=fortest)
+            page = pageanalyst.analyse(page['url'], content, fortest=fortest)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {
@@ -56,7 +56,8 @@ class TestPage(webapp2.RequestHandler):
             'encodingSrc': fetchResult.get('encoding.src'),
             'oldContent': fetchResult.get('content.old'),
             'content': fetchResult.get('content'),
-            'page': jsonutil.getReadableString(page),
+            'pagestr': jsonutil.getReadableString(page),
+            'page': page,
         }
         self._render(templateValues)
 

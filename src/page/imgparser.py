@@ -21,13 +21,7 @@ def _fetchImageSize(imgurl):
         logging.info('Failed to fetch iamge: %s.' % (imgurl,))
     return None, None
 
-def parse(url, pagePositions):
-    mainelement = pagePositions.get('mainelement')
-    if mainelement is None:
-        mainelement = pagePositions.get('contentelement')
-    if mainelement is None:
-        return
-    result = {}
+def parse(url, mainelement):
     items = pyquery.PyQuery(mainelement)('img')
     for item in items:
         img = {}
@@ -47,11 +41,9 @@ def parse(url, pagePositions):
             continue
         if imgwidth < _MIN_WIDTH or imgheight < _MIN_HEIGHT:
             continue
-        if result and result['width'] * result['height'] > imgwidth * imgheight:
-            continue
         img['width'] = imgwidth
         img['height'] = imgheight
-        result = img
+        return img
 
-    return result
+    return None
 

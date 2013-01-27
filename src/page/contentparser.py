@@ -1,131 +1,168 @@
+import logging
 import pyquery
 
 from commonutil import lxmlutil
 
-def parse(docelement, pagePositions, sentenceFormat):
-    pMax, pParagraphs = parseByTagP(docelement, sentenceFormat)
-    bMax, bParagraphs = parseByTagBr(docelement, sentenceFormat)
-    maxparent = None
-    maxparagraphs = None
-    if pMax is not None:
-        if bMax is not None:
-            if len(pParagraphs) >= len(bParagraphs):
-                maxparent = pMax
-                maxparagraphs = pParagraphs
-            else:
-                maxparent = bMax
-                maxparagraphs = bParagraphs
-        else:
-            maxparent = pMax
-            maxparagraphs = pParagraphs
-    else:
-        if bMax is not None:
-            maxparent = bMax
-            maxparagraphs = bParagraphs
-
-    # the biggest parent is the content element.
-    if maxparent is not None:
-        pagePositions['contentelement'] = maxparent
-
-    return maxparagraphs
+def parse(docelement, sentenceFormat):
+    maxcontainer = parseTextArea(docelement, sentenceFormat)
+    if maxcontainer is not None:
+        paragraphs = getParagraphs(maxcontainer, sentenceFormat)
+        return maxcontainer, paragraphs
+    return None, None
 
 def isTextParagraph(text, sentenceFormat):
-    matched = False
+    if not sentenceFormat:
+        return True
     sentenceEnds = sentenceFormat.get('end')
     sentenceContains = sentenceFormat.get('contain')
     lastCharacter = text[-1]
-    if not sentenceFormat or lastCharacter in sentenceFormat:
-        matched = True
-    if not matched and sentenceContains:
-        for sentenceContain in sentenceContains:
-            if sentenceContain in text:
-                matched = True
+    if lastCharacter in sentenceEnds:
+        return True
+    for contain in sentenceContains:
+        if contain in text:
+            return True
+    return False
+
+def parseTextArea(docelement, sentenceFormat):
+    parentsum = {}
+    for item in docelement.iterdescendants():
+        parent = item.getparent()
+        if lxmlutil.isVisibleElement(item):
+            text = item.text
+            if text:
+                text = text.strip()
+            if text and isTextParagraph(text, sentenceFormat):
+                if parent in parentsum:
+                    parentsum[parent] += 1
+                else:
+                    parentsum[parent] = 1
+        text = item.tail
+        if text:
+            text = text.strip()
+        if text and isTextParagraph(text, sentenceFormat):
+            if parent in parentsum:
+                parentsum[parent] += 1
+            else:
+                parentsum[parent] = 1
+
+    maxsize = 0
+    maxparents = []
+    for parent, size in parentsum.iteritems():
+        if size > maxsize:
+            maxsize = size
+            maxparents = [parent]
+        elif size == maxsize:
+            maxparents.append(parent)
+
+    if not maxparents:
+        return None
+    if len(maxparents) == 1:
+        return maxparents[0]
+
+    maxsize = 0
+    maxparent = None
+    for parent in maxparents:
+        text = parent.text_content()
+        if text:
+            text = text.strip()
+        if text and len(text) > maxsize:
+            maxsize = len(text)
+            maxparent = parent
+    return maxparent
+
+
+def isCopyrightParagraph(text, sentenceFormat):
+    copyrightFormats = sentenceFormat.get('copyright')
+    if not copyrightFormats:
+        return False
+    for copyrightFormat in copyrightFormats:
+        result = True
+        for word in copyrightFormat:
+            if not word in text:
+                result = False
                 break
-    return matched
+        if result:
+            return True
+    return False
 
 def getParagraphs(maxparent, sentenceFormat):
     paragraphs = []
+    counter = 0
     text = maxparent.text
     if text:
         text = text.strip()
     if text and isTextParagraph(text, sentenceFormat):
-        paragraphs.append(text)
-    tagOccurence = {}
+        paragraphs.append({
+            'text': text,
+            'index': counter,
+        })
     for child in maxparent.iterchildren():
-        tag = child.tag
-        if not tag:
-            continue
-        if tag in tagOccurence:
-            tagOccurence[tag] += 1
-        else:
-            tagOccurence[tag] = 1
-    maxtag = None
-    maxsize = 0
-    for key, value in tagOccurence.iteritems():
-        if value > maxsize:
-            maxsize = value
-            maxtag = key
-    if not maxtag:
-        return paragraphs
-    for child in maxparent.iterchildren():
-        if child.tag != maxtag:
-            continue
+        counter += 1
         text = child.text_content()
-        if not text:
-            text = child.tail
         if text:
             text = text.strip()
         if text and isTextParagraph(text, sentenceFormat):
-            paragraphs.append(text)
+            paragraphs.append({
+                'text': text,
+                'index': counter,
+                'tag': child.tag,
+            })
+        text = child.tail
+        if text:
+            text = text.strip()
+        if text:
+            counter += 1
+            if isTextParagraph(text, sentenceFormat):
+                paragraphs.append({
+                    'text': text,
+                    'index': counter,
+                })
+
+    if not paragraphs:
+        return None
+    # text paragraph must have the same tag,
+    # such as <p>, <div>, <br>(tag is none)
+    tagsummary = {
+    }
+    for paragraph in paragraphs:
+        tag = paragraph.get('tag', 'None')
+        if tag in tagsummary:
+            tagsummary[tag] += 1
+        else:
+            tagsummary[tag] = 1
+    maxtag = None
+    maxcount = 0
+    for tag, count in tagsummary.iteritems():
+        if count > maxcount:
+            maxcount = count
+            maxtag = tag
+    paragraphs = [paragraph for paragraph in paragraphs
+                    if paragraph.get('tag', 'None') == maxtag]
+    if not paragraphs:
+        return None
+
+    # text paragraph must be near to other text paragraph
+    size = len(paragraphs)
+    for i in range(size):
+        if i == 0:
+            if i < size - 1:
+                paragraphs[i]['distance'] = paragraphs[i + 1]['index'] \
+                                             - paragraphs[i]['index']
+            else:
+                paragraphs[i]['distance'] = 0
+        elif i == size -1:
+            paragraphs[i]['distance'] = paragraphs[i]['index'] \
+                                             - paragraphs[i - 1]['index']
+        else:
+            distance1 = paragraphs[i]['index'] - paragraphs[i - 1]['index']
+            distance2 = paragraphs[i + 1]['index'] - paragraphs[i]['index']
+            paragraphs[i]['distance'] = min(distance1, distance2)
+    distances = [paragraph['distance'] for paragraph in paragraphs]
+    davg = sum(distances) / size
+    avgtoleration = 1
+    paragraphs = [paragraph['text'] for paragraph in paragraphs
+                    if paragraph['distance'] <= davg + avgtoleration]
+    if paragraphs and isCopyrightParagraph(paragraphs[-1], sentenceFormat):
+        paragraphs = paragraphs[:-1]
     return paragraphs
-
-def parseByTagP(docelement, sentenceFormat):
-    items = pyquery.PyQuery(docelement)('p')
-
-    # summarize paragraph size of parents.
-    result = {}
-    for item in items:
-        text = item.text_content()
-        if not text:
-            continue
-        parent = item.getparent()
-        if parent in result:
-            result[parent] += len(text)
-        else:
-            result[parent] = len(text)
-
-    # identify the biggest parent
-    maxsize = 0
-    maxparent = None
-    for parent, size in result.items():
-        if size > maxsize:
-            maxsize = size
-            maxparent = parent
-    paragraphs = []
-    if maxparent is not None:
-        paragraphs = getParagraphs(maxparent, sentenceFormat)
-    return maxparent, paragraphs
-
-def parseByTagBr(docelement, sentenceFormat):
-    items = pyquery.PyQuery(docelement)('br')
-    # summarize paragraph size of parents.
-    result = {}
-    for item in items:
-        parent = item.getparent()
-        if parent in result:
-            result[parent] += 1
-        else:
-            result[parent] = 1
-
-    maxsize = 0
-    maxparent = None
-    for parent, size in result.items():
-        if size > maxsize:
-            maxsize = size
-            maxparent = parent
-
-    paragraphs = []
-    if maxparent is not None:
-        paragraphs = getParagraphs(maxparent, sentenceFormat)
-    return maxparent, paragraphs
 

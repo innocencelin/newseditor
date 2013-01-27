@@ -80,7 +80,12 @@ class SingleEditResponse(webapp2.RequestHandler):
                     return
             if content:
                 page['url'] = usedUrl
-                editedPage = pageanalyst.analyse(page, content, fortest=fortest)
+                try:
+                    editedPage = pageanalyst.analyse(usedUrl, content)
+                    if 'title' not in editedpage and 'title' in page:
+                        editedPage['title'] = page['title']
+                except Exception:
+                    logging.error('Error happens when analyse %s.' % (usedUrl, ))
         else:
             message = 'No url in data: %s.' % (data, )
             logging.error(message)

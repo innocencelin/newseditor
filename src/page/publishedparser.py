@@ -4,58 +4,66 @@ import re
 from commonutil import lxmlutil
 import lxml.html
 
-def parse(publishedFormat, pagePositions, content):
-    contentelement = pagePositions.get('contentelement')
-    if contentelement is not None:
-        published = _getPublishedInside(publishedFormat, contentelement, pagePositions)
-        if not published:
-            published = _getPublishedBefore(publishedFormat, contentelement, pagePositions)
-    else:
-        published = _getPublished(publishedFormat, content)
-    return published
-
-def _getPublishedInside(publishedFormat, contentelement, pagePositions):
+def parseByElement(publishedFormat, contentelement):
     published = None
+    publishedelement = None
+    # publishedelement, published = _getPublishedInside(publishedFormat, contentelement)
+    if not published:
+        publishedelement, published = _getPublishedBefore(publishedFormat, contentelement)
+    return publishedelement, published
+
+def parseByText(publishedFormat, content):
+    return _getPublished(publishedFormat, content)
+
+def _getPublishedInside(publishedFormat, contentelement):
+    published = None
+    publishedelement = None
     text = contentelement.text
     if text:
         published = _getPublished(publishedFormat, text)
     if published:
-        pagePositions['publishedelement'] = contentelement
-        return
+        publishedelement = contentelement
+        return publishedelement, published
     for child in contentelement.iterdescendants():
-        text = child.text
-        if text:
-            published = _getPublished(publishedFormat, text)
-        if published:
-            pagePositions['publishedelement'] = child
-            break
+        if lxmlutil.isVisibleElement(child):
+            text = child.text
+            if text:
+                published = _getPublished(publishedFormat, text)
+            if published:
+                publishedelement = child
+                break
         text = child.tail
         if text:
             published = _getPublished(publishedFormat, text)
         if published:
-            pagePositions['publishedelement'] = child
+            publishedelement = child
             break
-    return published
+    return publishedelement, published
 
-def _getPublishedBefore(publishedFormat, contentelement, pagePositions):
+def _getPublishedBefore(publishedFormat, contentelement):
     published = None
+    publishedelement = None
     previous = contentelement
     while True:
         previous = lxmlutil.getFullPrevious(previous)
         if previous is None:
             break
-        if isinstance(previous, lxml.html.HtmlComment):
-            continue
-        if isinstance(previous, lxml.html.HtmlElement) and \
-                previous.tag == 'script':
-            continue
-        text = previous.text_content()
-        published = _getPublished(publishedFormat, text)
+        if lxmlutil.isVisibleElement(previous):
+            text = previous.text_content()
+            if text:
+                published = _getPublished(publishedFormat, text)
         if published:
             # get the deepest element which has published data.
-            _getPublishedInside(publishedFormat, previous, pagePositions)
+            publishedelement, published = _getPublishedInside(publishedFormat, previous)
             break
-    return published
+        if not published:
+            text = previous.tail
+            if text:
+                published = _getPublished(publishedFormat, text)
+            if published:
+                publishedelement = previous
+                break
+    return publishedelement, published
 
 def _getPublished(publishedFormat, content):
     publishedPatterns = publishedFormat.get('patterns')
