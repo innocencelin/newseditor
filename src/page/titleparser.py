@@ -93,7 +93,7 @@ def getTitleFromBody(bodyContent, sentence):
             minvalue = m.group(0).strip()
     return minvalue
 
-def parseByElement(mainelement, publishedelement):
+def parseByElement(mainelement, publishedelement, content):
     maxtitle = None
     titleelement = None
     text = mainelement.text
@@ -131,6 +131,8 @@ def parseByElement(mainelement, publishedelement):
 
     if maxelement is not None:
         titleelement = maxelement
-
+    headTitle = getTitleFromHead(content)
+    if maxtitle and headTitle and len(maxtitle) > len(headTitle):
+        return None, None
     return titleelement, maxtitle
 

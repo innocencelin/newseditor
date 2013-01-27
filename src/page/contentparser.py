@@ -3,14 +3,14 @@ import pyquery
 
 from commonutil import lxmlutil
 
-def parse(docelement, sentenceFormat):
-    maxcontainer = parseTextArea(docelement, sentenceFormat)
+def parse(sentenceFormat, docelement):
+    maxcontainer = parseTextArea(sentenceFormat, docelement)
     if maxcontainer is not None:
-        paragraphs = getParagraphs(maxcontainer, sentenceFormat)
+        paragraphs = getParagraphs(sentenceFormat, maxcontainer)
         return maxcontainer, paragraphs
     return None, None
 
-def isTextParagraph(text, sentenceFormat):
+def isTextParagraph(sentenceFormat, text):
     if not sentenceFormat:
         return True
     sentenceEnds = sentenceFormat.get('end')
@@ -23,7 +23,7 @@ def isTextParagraph(text, sentenceFormat):
             return True
     return False
 
-def parseTextArea(docelement, sentenceFormat):
+def parseTextArea(sentenceFormat, docelement):
     parentsum = {}
     for item in docelement.iterdescendants():
         parent = item.getparent()
@@ -31,7 +31,7 @@ def parseTextArea(docelement, sentenceFormat):
             text = item.text
             if text:
                 text = text.strip()
-            if text and isTextParagraph(text, sentenceFormat):
+            if text and isTextParagraph(sentenceFormat, text):
                 if parent in parentsum:
                     parentsum[parent] += 1
                 else:
@@ -39,7 +39,7 @@ def parseTextArea(docelement, sentenceFormat):
         text = item.tail
         if text:
             text = text.strip()
-        if text and isTextParagraph(text, sentenceFormat):
+        if text and isTextParagraph(sentenceFormat, text):
             if parent in parentsum:
                 parentsum[parent] += 1
             else:
@@ -71,7 +71,7 @@ def parseTextArea(docelement, sentenceFormat):
     return maxparent
 
 
-def isCopyrightParagraph(text, sentenceFormat):
+def isCopyrightParagraph(sentenceFormat, text):
     copyrightFormats = sentenceFormat.get('copyright')
     if not copyrightFormats:
         return False
@@ -85,13 +85,13 @@ def isCopyrightParagraph(text, sentenceFormat):
             return True
     return False
 
-def getParagraphs(maxparent, sentenceFormat):
+def getParagraphs(sentenceFormat, maxparent):
     paragraphs = []
     counter = 0
     text = maxparent.text
     if text:
         text = text.strip()
-    if text and isTextParagraph(text, sentenceFormat):
+    if text and isTextParagraph(sentenceFormat, text):
         paragraphs.append({
             'text': text,
             'index': counter,
@@ -101,7 +101,7 @@ def getParagraphs(maxparent, sentenceFormat):
         text = child.text_content()
         if text:
             text = text.strip()
-        if text and isTextParagraph(text, sentenceFormat):
+        if text and isTextParagraph(sentenceFormat, text):
             paragraphs.append({
                 'text': text,
                 'index': counter,
@@ -112,7 +112,7 @@ def getParagraphs(maxparent, sentenceFormat):
             text = text.strip()
         if text:
             counter += 1
-            if isTextParagraph(text, sentenceFormat):
+            if isTextParagraph(sentenceFormat, text):
                 paragraphs.append({
                     'text': text,
                     'index': counter,
@@ -162,7 +162,7 @@ def getParagraphs(maxparent, sentenceFormat):
     avgtoleration = 1
     paragraphs = [paragraph['text'] for paragraph in paragraphs
                     if paragraph['distance'] <= davg + avgtoleration]
-    if paragraphs and isCopyrightParagraph(paragraphs[-1], sentenceFormat):
+    if paragraphs and isCopyrightParagraph(sentenceFormat, paragraphs[-1]):
         paragraphs = paragraphs[:-1]
     return paragraphs
 

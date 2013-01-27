@@ -25,7 +25,7 @@ def getMainElement(contentelement, publishedelement):
         parent = parent.getparent()
     return mainelement
 
-def getSentences(text, sentenceFormat):
+def getSentences(sentenceFormat, text):
     sentenceContains = sentenceFormat.get('contain')
     MIN_SENTENCE = 4
     for contain in sentenceContains:
@@ -47,24 +47,25 @@ def analyse(url, content, editorFormat=None, fortest=False):
     page['url'] = url
     docelement = lxml.html.fromstring(content)
 
+    MIN_PARAGRAPH_COUNT = 2
+
     sentenceFormat = editorFormat.get('sentence', {})
-    contentelement, paragraphs = contentparser.parse(docelement, sentenceFormat)
+    contentelement, paragraphs = contentparser.parse(sentenceFormat, docelement)
     if paragraphs:
         page['paragraphs'] = {}
         page['sentences'] = {}
         page['paragraphs']['first'] = paragraphs[0]
-        page['sentences']['first'] = getSentences(paragraphs[0], sentenceFormat)[0]
+        page['sentences']['first'] = getSentences(sentenceFormat, paragraphs[0])[0]
         if len(paragraphs) > 1:
             page['paragraphs']['last'] = paragraphs[-1]
-            page['sentences']['last'] = getSentences(paragraphs[-1], sentenceFormat)[-1]
+            page['sentences']['last'] = getSentences(sentenceFormat, paragraphs[-1])[-1]
 
     publishedFormat = editorFormat.get('published', {})
     publishedelement = None
     if publishedFormat:
-        if contentelement is not None:
-            publishedelement, published = publishedparser.parseByElement(publishedFormat, contentelement)
-        else:
-            published = publishedparser.parseByText(publishedFormat, content)
+        published = None
+        if contentelement is not None and len(paragraphs) >= MIN_PARAGRAPH_COUNT:
+            publishedelement, published = publishedparser.parse(publishedFormat, contentelement)
         if published:
             page['published'] = published
 
@@ -75,7 +76,7 @@ def analyse(url, content, editorFormat=None, fortest=False):
     img = None
     if mainelement is not None:
         img = imgparser.parse(url, mainelement)
-    elif contentelement:
+    elif contentelement is not None:
         img = imgparser.parse(url, contentelement)
     if img:
         page['img'] = img
@@ -83,7 +84,7 @@ def analyse(url, content, editorFormat=None, fortest=False):
     titleelement = None
     title = None
     if mainelement is not None and publishedelement is not None:
-        titleelement, title = titleparser.parseByElement(mainelement, publishedelement)
+        titleelement, title = titleparser.parseByElement(mainelement, publishedelement, content)
         if title:
             page['title'] = title
     if not title:

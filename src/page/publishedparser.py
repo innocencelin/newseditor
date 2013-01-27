@@ -4,16 +4,13 @@ import re
 from commonutil import lxmlutil
 import lxml.html
 
-def parseByElement(publishedFormat, contentelement):
+def parse(publishedFormat, contentelement):
     published = None
     publishedelement = None
     # publishedelement, published = _getPublishedInside(publishedFormat, contentelement)
     if not published:
         publishedelement, published = _getPublishedBefore(publishedFormat, contentelement)
     return publishedelement, published
-
-def parseByText(publishedFormat, content):
-    return _getPublished(publishedFormat, content)
 
 def _getPublishedInside(publishedFormat, contentelement):
     published = None
