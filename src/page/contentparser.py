@@ -56,8 +56,6 @@ def parseTextArea(sentenceFormat, docelement):
 
     if not maxparents:
         return None
-    if len(maxparents) == 1:
-        return maxparents[0]
 
     maxsize = 0
     maxparent = None
@@ -68,6 +66,11 @@ def parseTextArea(sentenceFormat, docelement):
         if text and len(text) > maxsize:
             maxsize = len(text)
             maxparent = parent
+    # <p> can be splited by some tags("a", etc.) into multi htmlelement.
+    # and <p> should not be seen as text container, it is the text itself.
+    tags = ['p']
+    if maxparent is not None and maxparent.tag in tags:
+        maxparent = maxparent.getparent()
     return maxparent
 
 
