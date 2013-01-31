@@ -74,7 +74,10 @@ def getTitleFromBody(bodyContent, sentence):
     minlen = 0
     minvalue = None
     slen = len(sentence)
+    maxTitlePosition = len(bodyContent) * 3 / 4
     for m in re.finditer(pattern, bodyContent, re.IGNORECASE|re.DOTALL):
+        if m.start() > maxTitlePosition:
+            break
         value = m.group(1).strip()
         if not minvalue:
             minvalue = value

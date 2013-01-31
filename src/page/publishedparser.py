@@ -78,13 +78,23 @@ def _getPublished(publishedFormat, content):
             if month and len(month) < 2:
                 data['month'] = '0' + month
 
+            day = data.get('day')
+            if day and len(day) < 2:
+                data['day'] = '0' + day
+
             hour = data.get('hour')
-            if hour and len(hour) < 2:
-                data['hour'] = '0' + hour
+            if hour:
+                if len(hour) < 2:
+                    data['hour'] = '0' + hour
+            else:
+                data['hour'] = '00'
 
             minute = data.get('minute')
-            if minute and len(minute) < 2:
-                data['minute'] = '0' + minute
+            if minute:
+                if len(minute) < 2:
+                    data['minute'] = '0' + minute
+            else:
+                data['minute'] = '00'
 
             second = data.get('second')
             if second:
@@ -92,6 +102,7 @@ def _getPublished(publishedFormat, content):
                     data['second'] = '0' + second
             else:
                 data['second'] = '00'
+
             return format % data
 
     return None

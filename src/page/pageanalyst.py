@@ -1,6 +1,7 @@
 ﻿# coding=utf-8
 
 import logging
+import re
 
 import lxml
 
@@ -25,15 +26,25 @@ def getMainElement(contentelement, publishedelement):
         parent = parent.getparent()
     return mainelement
 
-def getSentences(sentenceFormat, text):
-    sentenceContains = sentenceFormat.get('contain')
-    MIN_SENTENCE = 4
+def getSentences(contentFormat, text):
+    sentenceContains = contentFormat['sentence'].get('contain')
+    suffixStrip = None
+    stripFormat = contentFormat.get('filter')
+    if stripFormat:
+        suffixStrips = stripFormat.get('suffix')
+    MIN_SENTENCE = stripFormat.get('length', 10)
     for contain in sentenceContains:
         if contain not in text:
             continue
         sentences = text.split(contain)
         sentences = [sentence + contain for sentence in sentences
                         if sentence and len(sentence) >= MIN_SENTENCE]
+        if sentences and suffixStrips:
+            lastSentence = sentences[-1]
+            for suffixStrip in suffixStrips:
+                if re.search(suffixStrip, lastSentence, re.IGNORECASE|re.DOTALL):
+                    del sentences[-1]
+                    break
         return sentences
     return [text]
 
@@ -49,16 +60,20 @@ def analyse(url, content, editorFormat=None, fortest=False):
 
     MIN_PARAGRAPH_COUNT = 2
 
-    sentenceFormat = editorFormat.get('sentence', {})
-    contentelement, paragraphs = contentparser.parse(sentenceFormat, docelement)
+    contentFormat = editorFormat.get('content', {})
+    contentelement, paragraphs = contentparser.parse(contentFormat, docelement)
     if paragraphs:
         page['paragraphs'] = {}
         page['sentences'] = {}
         page['paragraphs']['first'] = paragraphs[0]
-        page['sentences']['first'] = getSentences(sentenceFormat, paragraphs[0])[0]
+        sentences = getSentences(contentFormat, paragraphs[0])
+        if sentences:
+            page['sentences']['first'] = sentences[0]
         if len(paragraphs) > 1:
             page['paragraphs']['last'] = paragraphs[-1]
-            page['sentences']['last'] = getSentences(sentenceFormat, paragraphs[-1])[-1]
+            sentences = getSentences(contentFormat, paragraphs[-1])
+            if sentences:
+                page['sentences']['last'] = sentences[-1]
 
     publishedFormat = editorFormat.get('published', {})
     publishedelement = None

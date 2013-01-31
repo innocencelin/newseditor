@@ -1,18 +1,23 @@
 import logging
+import re
+
 import pyquery
 
 from commonutil import lxmlutil
 
-def parse(sentenceFormat, docelement):
+def parse(contentFormat, docelement):
+    if not contentFormat:
+        return None, None
+    sentenceFormat = contentFormat.get('sentence')
     maxcontainer = parseTextArea(sentenceFormat, docelement)
     if maxcontainer is not None:
-        paragraphs = getParagraphs(sentenceFormat, maxcontainer)
+        paragraphs = getParagraphs(contentFormat, maxcontainer)
         return maxcontainer, paragraphs
     return None, None
 
 def isTextParagraph(sentenceFormat, text):
     if not sentenceFormat:
-        return True
+        return False
     sentenceEnds = sentenceFormat.get('end')
     sentenceContains = sentenceFormat.get('contain')
     lastCharacter = text[-1]
@@ -33,62 +38,48 @@ def parseTextArea(sentenceFormat, docelement):
                 text = text.strip()
             if text and isTextParagraph(sentenceFormat, text):
                 if parent in parentsum:
-                    parentsum[parent] += 1
+                    parentsum[parent] += len(text)
                 else:
-                    parentsum[parent] = 1
+                    parentsum[parent] = len(text)
         text = item.tail
         if text:
             text = text.strip()
         if text and isTextParagraph(sentenceFormat, text):
             if parent in parentsum:
-                parentsum[parent] += 1
+                parentsum[parent] += len(text)
             else:
-                parentsum[parent] = 1
-
-    maxsize = 0
-    maxparents = []
-    for parent, size in parentsum.iteritems():
-        if size > maxsize:
-            maxsize = size
-            maxparents = [parent]
-        elif size == maxsize:
-            maxparents.append(parent)
-
-    if not maxparents:
-        return None
+                parentsum[parent] = len(text)
 
     maxsize = 0
     maxparent = None
-    for parent in maxparents:
-        text = parent.text_content()
-        if text:
-            text = text.strip()
-        if text and len(text) > maxsize:
-            maxsize = len(text)
+    for parent, size in parentsum.iteritems():
+        if size > maxsize:
+            maxsize = size
             maxparent = parent
-    # <p> can be splited by some tags("a", etc.) into multi htmlelement.
+
+    # <p> can be splited by some tags("a", "font", etc.) into multi htmlelement.
     # and <p> should not be seen as text container, it is the text itself.
+    # <p> can be seen as container if it contains <br/>
     tags = ['p']
     if maxparent is not None and maxparent.tag in tags:
-        maxparent = maxparent.getparent()
+        if len(pyquery.PyQuery(maxparent)('br')) > 0:
+            return maxparent
+        if len(pyquery.PyQuery(maxparent)('a')) > 0:
+            return maxparent.getparent()
     return maxparent
 
 
-def isCopyrightParagraph(sentenceFormat, text):
-    copyrightFormats = sentenceFormat.get('copyright')
-    if not copyrightFormats:
+def isCopyrightParagraph(contentFormat, text):
+    copyrightPatterns = contentFormat.get('copyright')
+    if not copyrightPatterns:
         return False
-    for copyrightFormat in copyrightFormats:
-        result = True
-        for word in copyrightFormat:
-            if not word in text:
-                result = False
-                break
-        if result:
+    for copyrightPattern in copyrightPatterns:
+        if re.search(copyrightPattern, text, re.IGNORECASE|re.DOTALL):
             return True
     return False
 
-def getParagraphs(sentenceFormat, maxparent):
+def getParagraphs(contentFormat, maxparent):
+    sentenceFormat = contentFormat.get('sentence')
     paragraphs = []
     counter = 0
     text = maxparent.text
@@ -165,7 +156,7 @@ def getParagraphs(sentenceFormat, maxparent):
     avgtoleration = 1
     paragraphs = [paragraph['text'] for paragraph in paragraphs
                     if paragraph['distance'] <= davg + avgtoleration]
-    if paragraphs and isCopyrightParagraph(sentenceFormat, paragraphs[-1]):
+    if paragraphs and isCopyrightParagraph(contentFormat, paragraphs[-1]):
         paragraphs = paragraphs[:-1]
     return paragraphs
 
