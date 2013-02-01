@@ -7,6 +7,7 @@ import lxml
 
 import globalconfig
 from . import contentparser
+from . import digestparser
 from . import publishedparser
 from . import imgparser
 from . import titleparser
@@ -26,28 +27,6 @@ def getMainElement(contentelement, publishedelement):
         parent = parent.getparent()
     return mainelement
 
-def getSentences(contentFormat, text):
-    sentenceContains = contentFormat['sentence'].get('contain')
-    suffixStrip = None
-    stripFormat = contentFormat.get('filter')
-    if stripFormat:
-        suffixStrips = stripFormat.get('suffix')
-    MIN_SENTENCE = stripFormat.get('length', 10)
-    for contain in sentenceContains:
-        if contain not in text:
-            continue
-        sentences = text.split(contain)
-        sentences = [sentence + contain for sentence in sentences
-                        if sentence and len(sentence) >= MIN_SENTENCE]
-        if sentences and suffixStrips:
-            lastSentence = sentences[-1]
-            for suffixStrip in suffixStrips:
-                if re.search(suffixStrip, lastSentence, re.IGNORECASE|re.DOTALL):
-                    del sentences[-1]
-                    break
-        return sentences
-    return [text]
-
 def analyse(url, content, editorFormat=None, fortest=False):
     if not editorFormat:
         editorFormat = globalconfig.getEditorFormat()
@@ -63,17 +42,12 @@ def analyse(url, content, editorFormat=None, fortest=False):
     contentFormat = editorFormat.get('content', {})
     contentelement, paragraphs = contentparser.parse(contentFormat, docelement)
     if paragraphs:
-        page['paragraphs'] = {}
-        page['sentences'] = {}
-        page['paragraphs']['first'] = paragraphs[0]
-        sentences = getSentences(contentFormat, paragraphs[0])
-        if sentences:
-            page['sentences']['first'] = sentences[0]
-        if len(paragraphs) > 1:
-            page['paragraphs']['last'] = paragraphs[-1]
-            sentences = getSentences(contentFormat, paragraphs[-1])
-            if sentences:
-                page['sentences']['last'] = sentences[-1]
+        # page['p'] = paragraphs
+        result = digestparser.parse(contentFormat, paragraphs)
+        if result and result.get('paragraphs'):
+            page['paragraphs'] = result.get('paragraphs')
+        if result and result.get('sentences'):
+            page['sentences'] = result.get('sentences')
 
     publishedFormat = editorFormat.get('published', {})
     publishedelement = None
