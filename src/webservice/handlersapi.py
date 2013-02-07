@@ -82,8 +82,6 @@ class SingleEditResponse(webapp2.RequestHandler):
                 page['url'] = usedUrl
                 try:
                     editedPage = pageanalyst.analyse(usedUrl, content)
-                    if editedPage and 'title' not in editedPage and 'title' in page:
-                        editedPage['title'] = page['title']
                 except Exception:
                     logging.exception('Error happens when analyse %s.' % (usedUrl, ))
         else:
@@ -94,7 +92,10 @@ class SingleEditResponse(webapp2.RequestHandler):
         callbackurl = data['callbackurl']
         responseData = {
                 'origin': data['origin'],
-                'items': [editedPage if editedPage else page],
+                'items': [{'url': page.get('url'),
+                            'monitor': page,
+                            'editor': editedPage,
+                            }],
         }
         doCallback = False
         for i in range(_CALLBACK_TRYCOUNT):
