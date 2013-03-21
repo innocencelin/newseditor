@@ -33,17 +33,23 @@ class BatchEditRequest(webapp2.RequestHandler):
         networkutil.updateUuids(uuid)
 
         items = data['items']
-        for item in items:
-            requestobj = {
-                'callbackurl': data['callbackurl'],
+
+        responseData = {
                 'origin': data['origin'],
-                'header': data.get('header'),
-                'page': item,
-            }
-            rawdata = json.dumps(requestobj)
-            taskqueue.add(queue_name="default", payload=rawdata, url='/edit/single/')
+                'items': items,
+        }
+
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write('Put fetch task into queue.')
+        callbackurl = data['callbackurl']
+        success = networkutil.postData(callbackurl, responseData,
+                    trycount=_CALLBACK_TRYCOUNT, timeout=_URL_TIMEOUT)
+
+        if success:
+            message = 'Push items back for %s to %s.' % (data['origin'], callbackurl)
+        else:
+            message = 'Failed to push items back for %s to %s.' % (data['origin'], callbackurl)
+        logging.info(message)
+        self.response.out.write(message)
 
 
 class SingleEditResponse(webapp2.RequestHandler):

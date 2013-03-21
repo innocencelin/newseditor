@@ -18,7 +18,7 @@ class MainPage(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([
 ('/', MainPage),
 ('/configitem/', configmanager.handlers.MainPage),
-('/admin/edit/test/', webservice.handlers.TestPage),
+('/admin/test/', webservice.handlers.TestPage),
 ('/api/edit/', webservice.handlersapi.EditRequest),
 ('/edit/batch/', webservice.handlersapi.BatchEditRequest),
 ('/edit/single/', webservice.handlersapi.SingleEditResponse),
