@@ -21,7 +21,6 @@ app = webapp2.WSGIApplication([
 ('/admin/test/', webservice.handlers.TestPage),
 ('/api/edit/', webservice.handlersapi.EditRequest),
 ('/edit/batch/', webservice.handlersapi.BatchEditRequest),
-('/edit/single/', webservice.handlersapi.SingleEditResponse),
 ],
                               debug=True)
 

@@ -144,7 +144,9 @@ def getParagraphs(contentFormat, maxparent):
         return getBrParagraphs(maxparent)
     paragraphs = []
     text = lxmlutil.getCleanText(maxparent)
-    items = text.split('\n')
+    items = []
+    if text:
+        items = text.split('\n')
     for item in items:
         item = item.strip()
         if item:

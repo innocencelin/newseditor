@@ -42,12 +42,11 @@ def analyse(url, content, editorFormat=None, fortest=False):
     contentFormat = editorFormat.get('content', {})
     contentelement, paragraphs = contentparser.parse(contentFormat, docelement)
     if paragraphs:
+        maxContentLength = 100
         # page['p'] = paragraphs
         result = digestparser.parse(contentFormat, paragraphs)
         if result and result.get('paragraphs'):
-            page['paragraphs'] = result.get('paragraphs')
-        if result and result.get('sentences'):
-            page['sentences'] = result.get('sentences')
+            page['content'] = result['paragraphs']['first'][:maxContentLength]
 
     publishedFormat = editorFormat.get('published', {})
     publishedelement = None
