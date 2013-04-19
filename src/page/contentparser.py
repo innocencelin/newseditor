@@ -112,6 +112,8 @@ def getBrParagraphs(maxparent):
     text = maxparent.text
     if text:
         text = text.strip()
+    else:
+        text = ''
     for child in maxparent.iterchildren():
         if child.tag == 'br':
             if text:

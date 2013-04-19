@@ -1,6 +1,7 @@
 import datetime
 import urlparse
 
+from commonutil import dateutil
 import configmanager.models
 from configmanager import cmapi
 
@@ -24,10 +25,10 @@ def isConstantTitle(titleConfig, url, title, sideEffect):
     if sideEffect:
         nnow = datetime.datetime.utcnow()
         record['c'] = count + 1
-        record['u'] = nnow
+        record['u'] = dateutil.getDateAs14(nnow)
         if len(value) > 20:
             for ik, iv in value.items():
-                if (nnow - iv['u']).days >= titleConfig.get('cache.day', 7):
+                if (nnow - dateutil.parseDate14(iv['u'])).days >= titleConfig.get('cache.day', 7):
                     del value[ik]
         value[title] = record
         success = cmapi.saveItem(key, value, modelname=PageConstantTitle)
