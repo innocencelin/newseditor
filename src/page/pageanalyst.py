@@ -5,7 +5,6 @@ import re
 
 import lxml
 
-import globalconfig
 from . import contentparser
 from . import digestparser
 from . import publishedparser
@@ -27,12 +26,7 @@ def getMainElement(contentelement, publishedelement):
         parent = parent.getparent()
     return mainelement
 
-def analyse(url, content, editorFormat=None, fortest=False):
-    if not editorFormat:
-        editorFormat = globalconfig.getEditorFormat()
-    if not editorFormat:
-        logging.error('Failed to load editor format.')
-        return
+def analyse(url, content, editorFormat, fortest=False):
     page = {}
     page['url'] = url
     docelement = lxml.html.fromstring(content)

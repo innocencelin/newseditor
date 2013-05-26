@@ -6,7 +6,9 @@ import webapp2
 
 from commonutil import jsonutil
 from contentfetcher import ContentFetcher
+
 from page import pageanalyst
+from . import globalconfig
 
 class TestPage(webapp2.RequestHandler):
 
@@ -44,7 +46,8 @@ class TestPage(webapp2.RequestHandler):
             page = {'url': fetchResult.get('url')}
             if title:
                 page['title'] = title
-            page = pageanalyst.analyse(page['url'], content, fortest=fortest)
+            editorFormat = globalconfig.getEditorFormat()
+            page = pageanalyst.analyse(page['url'], content, editorFormat=editorFormat, fortest=fortest)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {

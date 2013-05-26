@@ -8,6 +8,7 @@ import webapp2
 from commonutil import networkutil
 from contentfetcher import ContentFetcher
 from page import pageanalyst
+from . import globalconfig
 
 _URL_TIMEOUT = 30
 _CALLBACK_TRYCOUNT = 3
@@ -48,7 +49,8 @@ class BatchEditRequest(webapp2.RequestHandler):
                 continue
             item['url'] = usedUrl
             try:
-                page = pageanalyst.analyse(usedUrl, content)
+                editorFormat = globalconfig.getEditorFormat()
+                page = pageanalyst.analyse(usedUrl, content, editorFormat=editorFormat)
                 if not item.get('title') and page.get('title'):
                     item['title'] = page['title']
                 if not item.get('content') and page.get('content'):
