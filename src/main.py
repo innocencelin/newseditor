@@ -19,5 +19,5 @@ app = webapp2.WSGIApplication([
 ('/api/edit/', editor.handlersapi.EditRequest),
 ('/edit/batch/', editor.handlersapi.BatchEditRequest),
 ],
-                              debug=True)
+debug=os.environ['SERVER_SOFTWARE'].startswith('Dev'))
 

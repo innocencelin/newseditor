@@ -15,6 +15,15 @@ _CALLBACK_TRYCOUNT = 3
 
 class EditRequest(webapp2.RequestHandler):
     def post(self):
+        data = json.loads(self.request.body)
+        uuid = data.get('uuid')
+        if networkutil.isUuidHandled(uuid):
+            message = 'BatchEditRequest: %s is already handled.' % (uuid, )
+            logging.warn(message)
+            self.response.out.write(message)
+            return
+        networkutil.updateUuids(uuid)
+
         rawdata = self.request.body
         taskqueue.add(queue_name="default", payload=rawdata, url='/edit/batch/')
         self.response.headers['Content-Type'] = 'text/plain'
@@ -23,14 +32,6 @@ class EditRequest(webapp2.RequestHandler):
 class BatchEditRequest(webapp2.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
-
-        uuid = data.get('uuid')
-        if networkutil.isUuidHandled(uuid):
-            message = 'BatchEditRequest: %s is already handled.' % (uuid, )
-            logging.warn(message)
-            self.response.out.write(message)
-            return
-        networkutil.updateUuids(uuid)
 
         items = data['items']
 
