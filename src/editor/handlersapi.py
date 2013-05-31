@@ -51,7 +51,8 @@ class BatchEditRequest(webapp2.RequestHandler):
             item['url'] = usedUrl
             try:
                 editorFormat = globalconfig.getEditorFormat()
-                page = pageanalyst.analyse(usedUrl, content, editorFormat=editorFormat)
+                page = pageanalyst.analyse(usedUrl, content,
+                            editorFormat=editorFormat, monitorTitle=item.get('title'))
                 if not item.get('title') and page.get('title'):
                     item['title'] = page['title']
                 if not item.get('content') and page.get('content'):

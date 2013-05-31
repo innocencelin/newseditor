@@ -5,74 +5,71 @@ import re
 
 import lxml
 
+from commonutil import lxmlutil
+from . import titleparser
 from . import contentparser
-from . import digestparser
+from . import paragraphparser
 from . import publishedparser
 from . import imgparser
-from . import titleparser
 
-def getMainElement(contentelement, publishedelement):
-    mainelement = None
-    parents = []
-    parent = contentelement
-    while parent is not None:
-        parents.append(parent)
-        parent = parent.getparent()
-    parent = publishedelement
-    while parent is not None:
-        if parent in parents:
-            mainelement = parent
-            break
-        parent = parent.getparent()
-    return mainelement
-
-def analyse(url, content, editorFormat, fortest=False):
+def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elementResult={}):
     page = {}
-    page['url'] = url
     docelement = lxml.html.fromstring(content)
 
-    MIN_PARAGRAPH_COUNT = 2
+    titleFormat = editorFormat.get('title', {})
+    title, titleeEements = titleparser.parse(titleFormat, url, docelement, monitorTitle, fortest)
+    if not titleeEements:
+        return page
+    page['title'] = title
+    if elementResult is not None:
+        elementResult['titles'] = titleeEements
 
-    contentFormat = editorFormat.get('content', {})
-    contentelement, paragraphs = contentparser.parse(contentFormat, docelement)
+    page['url'] = url
+    titleElement, contentElement = contentparser.parse(titleeEements)
+    if elementResult is not None:
+        elementResult['element'] = {}
+        elementResult['text'] = {}
+
+        elementResult['element']['title'] = titleElement
+        elementResult['text']['title'] = lxmlutil.getCleanText(titleElement)
+
+        elementResult['element']['content'] = contentElement
+        elementResult['text']['content'] = lxmlutil.getCleanText(contentElement)
+
+    mainElement, paragraphs = paragraphparser.parse(contentElement)
+    page['paragraphs'] = paragraphs
+    if elementResult is not None:
+        elementResult['element']['main'] = mainElement
+        elementResult['text']['main'] = lxmlutil.getCleanText(mainElement)
+
+
+    _ = """
     if paragraphs:
         maxContentLength = 100
         # page['p'] = paragraphs
         result = digestparser.parse(contentFormat, paragraphs)
         if result and result.get('paragraphs'):
             page['content'] = result['paragraphs']['first'][:maxContentLength]
-
     publishedFormat = editorFormat.get('published', {})
     publishedelement = None
     if publishedFormat:
         published = None
-        if contentelement is not None and len(paragraphs) >= MIN_PARAGRAPH_COUNT:
-            publishedelement, published = publishedparser.parse(publishedFormat, contentelement)
+        if contentElement is not None and len(paragraphs) >= MIN_PARAGRAPH_COUNT:
+            publishedelement, published = publishedparser.parse(publishedFormat, contentElement)
         if published:
             page['published'] = published
 
     mainelement = None
-    if contentelement is not None and publishedelement is not None:
-        mainelement = getMainElement(contentelement, publishedelement)
+    if contentElement is not None and publishedelement is not None:
+        mainelement = getMainElement(contentElement, publishedelement)
 
     img = None
     if mainelement is not None:
         img = imgparser.parse(url, mainelement)
-    elif contentelement is not None:
-        img = imgparser.parse(url, contentelement)
+    elif contentElement is not None:
+        img = imgparser.parse(url, contentElement)
     if img:
         page['img'] = img
-
-    titleelement = None
-    title = None
-    if mainelement is not None and publishedelement is not None:
-        titleelement, title = titleparser.parseByElement(mainelement, publishedelement, content)
-        if title:
-            page['title'] = title
-    if not title:
-        titleFormat = editorFormat.get('title', {})
-        title = titleparser.parseByText(titleFormat, url, content, fortest)
-        if title:
-            page['title'] = title
+"""
     return page
 

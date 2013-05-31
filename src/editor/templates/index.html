@@ -18,6 +18,10 @@
     </form>
     <pre>{{ pagestr }}</pre>
   {% if page.img %}<img src="{{ page.img.url }}" width="{{ page.img.width }}" height="{{ page.img.height }}"/> {% endif %}
+<br/><br/>{{ elementResult.element }}
+<br/>Title: {{ elementResult.text.title }}
+<br/>Content:<br/><textarea rows="2" cols="130">{{ elementResult.text.content }}</textarea>
+<br/>Main:<br/><textarea rows="2" cols="130">{{ elementResult.text.main }}</textarea>
   </body>
 </html>
 

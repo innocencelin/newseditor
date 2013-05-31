@@ -42,12 +42,11 @@ class TestPage(webapp2.RequestHandler):
                              )
             fetchResult = fetcher.fetch()
             content = fetchResult.get('content')
+        elementResult = {}
         if content:
-            page = {'url': fetchResult.get('url')}
-            if title:
-                page['title'] = title
             editorFormat = globalconfig.getEditorFormat()
-            page = pageanalyst.analyse(page['url'], content, editorFormat=editorFormat, fortest=fortest)
+            page = pageanalyst.analyse(url, content, editorFormat=editorFormat,
+                                monitorTitle=title, fortest=fortest, elementResult=elementResult)
         if header:
             httpheader = jsonutil.getReadableString(header)
         templateValues = {
@@ -61,6 +60,7 @@ class TestPage(webapp2.RequestHandler):
             'content': fetchResult.get('content'),
             'pagestr': jsonutil.getReadableString(page),
             'page': page,
+            'elementResult': elementResult,
         }
         self._render(templateValues)
 

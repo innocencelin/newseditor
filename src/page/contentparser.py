@@ -10,148 +10,27 @@ import pyquery
 from commonutil import lxmlutil
 from pagecommon import isTextParagraph
 
-def parse(contentFormat, docelement):
-    if not contentFormat:
-        return None, None
-    sentenceFormat = contentFormat.get('sentence')
-    maxcontainer = parseTextArea(sentenceFormat, docelement)
-    if maxcontainer is not None:
-        paragraphs = getParagraphs(contentFormat, maxcontainer)
-        return maxcontainer, paragraphs
-    return None, None
-
-def isBrSeparated(element):
-    for child in element.iterchildren():
-        if child.tag == 'br':
-            return True
-    return False
-
-def parseTextArea(sentenceFormat, docelement):
-    parentsum = {}
-    for item in docelement.iterdescendants():
-        parent = item.getparent()
-        if lxmlutil.isVisibleElement(item):
-            text = item.text
-            if text:
-                text = text.strip()
-            if text and isTextParagraph(sentenceFormat, text):
-                if parent in parentsum:
-                    parentsum[parent] += 1
-                else:
-                    parentsum[parent] = 1
-        text = item.tail
-        if text:
-            text = text.strip()
-        if text and isTextParagraph(sentenceFormat, text):
-            if parent in parentsum:
-                parentsum[parent] += 1
-            else:
-                parentsum[parent] = 1
-
-    if not parentsum:
+def _getMainElement(titleElement):
+    parent = titleElement
+    p_parent = titleElement.getparent()
+    if p_parent is None:
         return None
 
-    maxsize = 0
-    maxparents = []
-    for parent, size in parentsum.iteritems():
-        if size > maxsize:
-            maxsize = size
-            maxparents = [parent]
-        else:
-            maxparents.append(parent)
+    result = []
+    while p_parent is not None:
+        len1 = len(lxmlutil.getCleanText(parent))
+        len2 = len(lxmlutil.getCleanText(p_parent))
+        result.append((len2 - len1, p_parent))
+        parent = p_parent
+        p_parent = p_parent.getparent()
 
-    if len(maxparents) == 1:
-        maxparent = maxparents[0]
-    else:
-        # maybe all the items have same parent, the parent is needed.
-        parentsum = {}
-        for parent in maxparents:
-            parent = parent.getparent()
-            if parent is None:
-                continue
-            if parent in parentsum:
-                parentsum[parent] += 1
-            else:
-                parentsum[parent] = 1
-        maxsize = 0
-        maxparentparent = None
-        for parent, size in parentsum.iteritems():
-            if size > maxsize:
-                maxsize = size
-                maxparentparent = parent
-        if maxsize > 1:
-            maxparent = maxparentparent
-        else:
-            # no same parent found, select the longest parent.
-            maxparent = None
-            maxsize = 0
-            for parent in maxparents:
-                text = parent.text_content()
-                if text:
-                    text = text.strip()
-                if len(text) > maxsize:
-                    maxsize = len(text)
-                    maxparent = parent
-    # <p> can be splited by some tags("a", "font", etc.) into multi htmlelement.
-    # and <p> should not be seen as text container, it is the text itself.
-    # <p> can be seen as container if it contains <br/>
-    tags = ['p']
-    if maxparent is not None and maxparent.tag in tags:
-        if isBrSeparated(maxparent):
-            return maxparent
-        if len(pyquery.PyQuery(maxparent)('a')) > 0:
-            return maxparent.getparent()
-    return maxparent
+    return max(result, key=lambda item: item[0])
 
-"""
-When br is used to separate paragraphs, it is hard to identify paragraphs.
-Eg: <div>paragragh 1<br/>paragragh <b>2</b><br/>paragragh 3.
-"""
-def getBrParagraphs(maxparent):
-    paragraphs = []
-    text = maxparent.text
-    if text:
-        text = text.strip()
-    else:
-        text = ''
-    for child in maxparent.iterchildren():
-        if child.tag == 'br':
-            if text:
-                paragraphs.append(text)
-            childtext = child.tail
-            if childtext:
-                childtext = childtext.strip()
-            if childtext:
-                text = childtext
-            else:
-                text = ''
-        else:
-            if lxmlutil.isVisibleElement(child):
-                childtext = child.text
-                if childtext:
-                    childtext = childtext.strip()
-                if childtext:
-                    text += childtext
-            childtext = child.tail
-            if childtext:
-                childtext = childtext.strip()
-            if childtext:
-                text += childtext
-    if text:
-        paragraphs.append(text)
-    return paragraphs
-
-def getParagraphs(contentFormat, maxparent):
-    if isBrSeparated(maxparent):
-        return getBrParagraphs(maxparent)
-    paragraphs = []
-    text = lxmlutil.getCleanText(maxparent)
-    items = []
-    if text:
-        items = text.split('\n')
-    for item in items:
-        item = item.strip()
-        if item:
-            paragraphs.append(item)
-    return paragraphs
+def parse(titleElements):
+    result = []
+    for titleElement in titleElements:
+        mainelementResult = _getMainElement(titleElement)
+        result.append((titleElement, mainelementResult))
+    maxitem = max(result, key=lambda item: item[1][0])
+    return maxitem[0], maxitem[1][1] # title, main
 
