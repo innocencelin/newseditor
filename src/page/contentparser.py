@@ -3,6 +3,7 @@ The main purpose is to identify the content element.
 It is the core feature, and other modules depend on its result.
 """
 import logging
+import math
 import re
 
 import pyquery
@@ -19,7 +20,9 @@ def _getMainElement(titleElement):
     while p_parent is not None:
         len1 = len(lxmlutil.getCleanText(parent))
         len2 = len(lxmlutil.getCleanText(p_parent))
-        result.append((len2 - len1, p_parent))
+        # title and parent element should as close as possible.
+        weight = (len2 - len1) - math.pow(titleElement.sourceline - p_parent.sourceline, 2)
+        result.append((weight, p_parent))
         parent = p_parent
         p_parent = p_parent.getparent()
 

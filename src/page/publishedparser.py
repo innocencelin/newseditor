@@ -20,25 +20,13 @@ def _getPublishedInside(publishedFormat, element):
     published = None
     publishedElement = None
 
-    if lxmlutil.isVisibleElement(element) and element.text:
-        published = _getPublished(publishedFormat, element.text)
-    if not published and element.tail:
-        published = _getPublished(publishedFormat, element.tail)
-    if published:
-        publishedElement = element
-        return publishedElement, published
+    items = []
+    funcResult = []
+    textFunc = tailFunc = lambda text: _getPublished(publishedFormat, text)
+    lxmlutil.findAllVisibleMatched(items, element, textFunc, tailFunc, funcResult)
 
-    if not lxmlutil.isVisibleElement(element):
-        return None, None
-
-    for child in element.iterdescendants():
-        if lxmlutil.isVisibleElement(child) and child.text:
-            published = _getPublished(publishedFormat, child.text)
-        if not published and child.tail:
-            published = _getPublished(publishedFormat, child.tail)
-        if published:
-            publishedElement = child
-            break
+    if items:
+        return items[0], funcResult[0]
     return publishedElement, published
 
 def _getPublished(publishedFormat, content):
@@ -48,7 +36,8 @@ def _getPublished(publishedFormat, content):
         format = publishedPattern.get('format')
         if not pattern or not format:
             continue
-
+        if type(pattern) != unicode:
+            pattern = unicode(pattern, 'utf-8')
         m = re.search(pattern, content)
         if m:
             data = m.groupdict()

@@ -36,10 +36,8 @@ def _getTitleElements(docelement, mainTitle):
         return []
     bodyElement = items[0]
     result = []
-    for child in bodyElement.iterdescendants():
-        if lxmlutil.isVisibleElement(child) and \
-            child.text and mainTitle in child.text:
-                result.append(child)
+    textFunc = tailFunc = lambda text: text and mainTitle in text
+    lxmlutil.findAllVisibleMatched(result, bodyElement, textFunc, tailFunc)
     return result
 
 def parse(titleFormat, url, docelement, monitorTitle, fortest):
