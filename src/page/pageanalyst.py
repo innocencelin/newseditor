@@ -52,33 +52,9 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
             if publishedElement is not None:
                 elementResult['text']['published'] = lxmlutil.getCleanText(publishedElement)
 
-    _ = """
-    if paragraphs:
-        maxContentLength = 100
-        # page['p'] = paragraphs
-        result = digestparser.parse(contentFormat, paragraphs)
-        if result and result.get('paragraphs'):
-            page['content'] = result['paragraphs']['first'][:maxContentLength]
-    publishedFormat = editorFormat.get('published', {})
-    publishedelement = None
-    if publishedFormat:
-        published = None
-        if contentElement is not None and len(paragraphs) >= MIN_PARAGRAPH_COUNT:
-            publishedelement, published = publishedparser.parse(publishedFormat, contentElement)
-        if published:
-            page['published'] = published
+        images = imgparser.parse(url, contentElement, titleElement, mainElement)
+        if images:
+            page['images'] = images
 
-    mainelement = None
-    if contentElement is not None and publishedelement is not None:
-        mainelement = getMainElement(contentElement, publishedelement)
-
-    img = None
-    if mainelement is not None:
-        img = imgparser.parse(url, mainelement)
-    elif contentElement is not None:
-        img = imgparser.parse(url, contentElement)
-    if img:
-        page['img'] = img
-"""
     return page
 

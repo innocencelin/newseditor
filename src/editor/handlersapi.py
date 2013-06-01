@@ -57,8 +57,8 @@ class BatchEditRequest(webapp2.RequestHandler):
                     item['title'] = page['title']
                 if not item.get('content') and page.get('content'):
                     item['content'] = page['content']
-                if not item.get('img') and page.get('img'):
-                    item['img'] = page['img']
+                if not item.get('img') and page.get('images'):
+                    item['img'] = page['images'][0]
             except Exception:
                 logging.exception('Error happens when analyse %s.' % (usedUrl, ))
 
