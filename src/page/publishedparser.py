@@ -2,65 +2,44 @@ import logging
 import re
 
 from commonutil import lxmlutil
-import lxml.html
 
-def parse(publishedFormat, contentelement):
+def parse(publishedFormat, titleElement, mainElement):
+    if titleElement.sourceline >= mainElement.sourceline:
+        return None, None
     published = None
-    publishedelement = None
-    # publishedelement, published = _getPublishedInside(publishedFormat, contentelement)
-    if not published:
-        publishedelement, published = _getPublishedBefore(publishedFormat, contentelement)
-    return publishedelement, published
+    publishedElement = None
+    element = lxmlutil.getFullNext(titleElement)
+    while element.sourceline < mainElement.sourceline:
+        publishedElement, published = _getPublishedInside(publishedFormat, element)
+        if publishedElement is not None:
+            break
+        element = lxmlutil.getFullNext(element)
+    return publishedElement, published
 
-def _getPublishedInside(publishedFormat, contentelement):
+def _getPublishedInside(publishedFormat, element):
     published = None
-    publishedelement = None
-    text = contentelement.text
-    if text:
-        published = _getPublished(publishedFormat, text)
+    publishedElement = None
+
+    if lxmlutil.isVisibleElement(element) and element.text:
+        published = _getPublished(publishedFormat, element.text)
+    if not published and element.tail:
+        published = _getPublished(publishedFormat, element.tail)
     if published:
-        publishedelement = contentelement
-        return publishedelement, published
-    for child in contentelement.iterdescendants():
-        if lxmlutil.isVisibleElement(child):
-            text = child.text
-            if text:
-                published = _getPublished(publishedFormat, text)
-            if published:
-                publishedelement = child
-                break
-        text = child.tail
-        if text:
-            published = _getPublished(publishedFormat, text)
-        if published:
-            publishedelement = child
-            break
-    return publishedelement, published
+        publishedElement = element
+        return publishedElement, published
 
-def _getPublishedBefore(publishedFormat, contentelement):
-    published = None
-    publishedelement = None
-    previous = contentelement
-    while True:
-        previous = lxmlutil.getFullPrevious(previous)
-        if previous is None:
-            break
-        if lxmlutil.isVisibleElement(previous):
-            text = previous.text_content()
-            if text:
-                published = _getPublished(publishedFormat, text)
+    if not lxmlutil.isVisibleElement(element):
+        return None, None
+
+    for child in element.iterdescendants():
+        if lxmlutil.isVisibleElement(child) and child.text:
+            published = _getPublished(publishedFormat, child.text)
+        if not published and child.tail:
+            published = _getPublished(publishedFormat, child.tail)
         if published:
-            # get the deepest element which has published data.
-            publishedelement, published = _getPublishedInside(publishedFormat, previous)
+            publishedElement = child
             break
-        if not published:
-            text = previous.tail
-            if text:
-                published = _getPublished(publishedFormat, text)
-            if published:
-                publishedelement = previous
-                break
-    return publishedelement, published
+    return publishedElement, published
 
 def _getPublished(publishedFormat, content):
     publishedPatterns = publishedFormat.get('patterns')

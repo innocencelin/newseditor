@@ -42,6 +42,15 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
         elementResult['element']['main'] = mainElement
         elementResult['text']['main'] = lxmlutil.getCleanText(mainElement)
 
+    if mainElement is not None:
+        publishedFormat = editorFormat.get('published', {})
+        publishedElement, published = publishedparser.parse(publishedFormat, titleElement, mainElement)
+        if published:
+            page['published'] = published
+        if elementResult is not None:
+            elementResult['element']['published'] = publishedElement
+            if publishedElement is not None:
+                elementResult['text']['published'] = lxmlutil.getCleanText(publishedElement)
 
     _ = """
     if paragraphs:
