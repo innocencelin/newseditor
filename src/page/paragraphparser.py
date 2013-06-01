@@ -1,3 +1,5 @@
+import logging
+
 from commonutil import lxmlutil
 
 def _getChildTextLength(element):
@@ -10,9 +12,9 @@ def _getChildTextLength(element):
             result += len(item.tail)
     return result
 
-def _getMainElement(contentelement):
+def _getMainElement(contentElement):
     result = []
-    for item in contentelement.iterdescendants():
+    for item in contentElement.iterdescendants():
         result.append((_getChildTextLength(item), item))
     return max(result, key=lambda item: item[0])[1]
 
@@ -30,14 +32,37 @@ def _getParagraphsTagP(element):
     for item in element.getchildren():
         if item.tag != 'p':
             continue
-        result.append(lxmlutil.getCleanText(item))
+        content = lxmlutil.getCleanText(item)
+        if content:
+            result.append(content)
     return result
 
 def _getParagraphsTagBR(element):
     return [lxmlutil.getCleanText(element)]
 
-def parse(contentelement):
-    mainElement = _getMainElement(contentelement)
+def _isTextParagraph(paragraphFormat, text):
+    sentenceEnds = paragraphFormat.get('end')
+    sentenceContains = paragraphFormat.get('contain')
+    lastCharacter = text[-1]
+    if lastCharacter in sentenceEnds:
+        return True
+    for contain in sentenceContains:
+        if contain in text:
+            return True
+    return False
+
+def _stripPreNonParagraph(paragraphFormat, paragraphs):
+    result = []
+    started = False
+    for paragraph in paragraphs:
+        if _isTextParagraph(paragraphFormat, paragraph):
+            started = True
+        if started:
+            result.append(paragraph)
+    return result
+
+def parse(paragraphFormat, contentElement):
+    mainElement = _getMainElement(contentElement)
     tag = _getMaxChildTag(mainElement)
     if tag == 'p':
         paragraphs = _getParagraphsTagP(mainElement)
@@ -45,5 +70,7 @@ def parse(contentelement):
         paragraphs = _getParagraphsTagBR(mainElement)
     else:
         paragraphs = [lxmlutil.getCleanText(mainElement)]
+    if paragraphFormat and paragraphs:
+        paragraphs = _stripPreNonParagraph(paragraphFormat, paragraphs)
     return mainElement, paragraphs
 

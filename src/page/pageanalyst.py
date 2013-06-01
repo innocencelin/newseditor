@@ -1,14 +1,11 @@
 ﻿# coding=utf-8
-
-import logging
-import re
-
 import lxml
 
 from commonutil import lxmlutil
 from . import titleparser
 from . import contentparser
 from . import paragraphparser
+from . import digestparser
 from . import publishedparser
 from . import imgparser
 
@@ -36,8 +33,11 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
         elementResult['element']['content'] = contentElement
         elementResult['text']['content'] = lxmlutil.getCleanText(contentElement)
 
-    mainElement, paragraphs = paragraphparser.parse(contentElement)
-    page['paragraphs'] = paragraphs
+    paragraphFormat = editorFormat.get('paragraph', {})
+    mainElement, paragraphs = paragraphparser.parse(paragraphFormat, contentElement)
+    if paragraphs:
+        page['paragraphs'] = paragraphs
+        page['content'] = digestparser.parse(paragraphFormat, paragraphs)
     if elementResult is not None:
         elementResult['element']['main'] = mainElement
         elementResult['text']['main'] = lxmlutil.getCleanText(mainElement)

@@ -8,7 +8,6 @@ import re
 import pyquery
 
 from commonutil import lxmlutil
-from pagecommon import isTextParagraph
 
 def _getMainElement(titleElement):
     parent = titleElement
