@@ -42,6 +42,8 @@ def _getTitleElements(docelement, mainTitle):
 
 def parse(titleFormat, url, docelement, monitorTitle, fortest):
     headTitle = _getTitleFromHead(docelement)
+    if not headTitle:
+        return None, []
     mainTitle = None
     if monitorTitle and monitorTitle in headTitle:
         mainTitle = monitorTitle

@@ -30,6 +30,20 @@ def _getNextText(element):
         element = lxmlutil.getFullNext(element)
     return None
 
+def _getImgTitle(element):
+    alt = element.get('alt')
+    nextTitle = _getNextText(element)
+    if alt:
+        if nextTitle:
+            if len(alt) <= len(nextTitle):
+                return alt
+            else:
+                return nextTitle
+        else:
+            return alt
+    else:
+        return nextTitle
+
 def _parseImg(url, imgElement):
     img = {}
     imgurl = imgElement.get('src')
@@ -49,13 +63,9 @@ def _parseImg(url, imgElement):
         return None
     if imgwidth < _MIN_WIDTH or imgheight < _MIN_HEIGHT:
         return None
-    alt = imgElement.get('alt')
-    if alt:
-        img['title'] = alt
-    else:
-        title = _getNextText(imgElement)
-        if title:
-            img['title'] = title
+    imgTitle = _getImgTitle(imgElement)
+    if imgTitle:
+        img['title'] = imgTitle
     img['width'] = imgwidth
     img['height'] = imgheight
     return img

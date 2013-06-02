@@ -2,36 +2,66 @@ import logging
 
 from commonutil import lxmlutil
 
-def _getChildTextLength(element):
+"""
+tag li can not be seen as paragraph.
+paragraph can only contains inline tags.
+"""
+def _getParagraphLengthByLink(element):
+    if element.tag == 'li':
+        return 0
     result = 0
+    if element.text:
+        result += len(element.text.strip())
     for item in element.getchildren():
-        if lxmlutil.isVisibleElement(item):
-            if item.text:
-                result += len(item.text.strip())
+        # treat br specially, it is used as paragraph separator by some site
+        if item.tag == 'br':
+            continue
+        if item.tag not in lxmlutil.INLINE_TAGS:
+            continue
+        text = lxmlutil.getCleanText(item)
+        if text:
+            result += len(text)
         if item.tail:
             result += len(item.tail.strip())
     return result
 
-def _getMainElement(contentElement):
+"""
+<p> often contains <a>, then p.text is only a small part of p.
+"""
+def _getChildTextLength(element):
+    result = 0
+    for item in element.getchildren():
+        if lxmlutil.isVisibleElement(item):
+            result += _getParagraphLengthByLink(item)
+        if item.tail:
+            result += len(item.tail.strip())
+    return result
+
+def _getMainElement(contentElement, titleElement):
+    _MIN_MAIN_LENGTH = 100
     items = []
     lxmlutil.findAllVisibleMatched(items, contentElement)
     result = []
     for item in items:
-        result.append((_getChildTextLength(item), item))
+        weight = _getChildTextLength(item)
+        result.append((weight, item))
+    result2 = [item for item in result if item[0] >= _MIN_MAIN_LENGTH]
+    if result2:
+        return min(result2, key=lambda item: item[1].sourceline)[1]
     return max(result, key=lambda item: item[0])[1]
 
 def _getMaxChildTag(element):
     result = {}
     for item in element.getchildren():
-        text = ''
-        if lxmlutil.isVisibleElement(item) and item.text:
-            text = item.text.strip()
-        if not text and item.tail:
-            text = item.tail.strip()
+        textlen = 0
+        if lxmlutil.isVisibleElement(item):
+            textlen += _getParagraphLengthByLink(item)
+        if item.tail:
+            textlen += len(item.tail.strip())
         if item.tag in result:
-            result[item.tag] += len(text)
+            result[item.tag] += textlen
         else:
-            result[item.tag] = len(text)
+            result[item.tag] = textlen
     return max(result.iterkeys(), key=(lambda key: result[key]))
 
 def _getParagraphsByTag(element, tag):
@@ -61,21 +91,29 @@ def _isTextParagraph(paragraphFormat, text):
 
 def _formatParagraphs(paragraphFormat, paragraphs):
     result = []
-    started = False # filter the starting non sentence paragraph
     for paragraph in paragraphs:
         lines = paragraph.split('\n')
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            if _isTextParagraph(paragraphFormat, line):
-                started = True
-            if started:
-                result.append(line)
-    return result
+            result.append(line)
+    start = 0
+    for paragraph in result:
+        if _isTextParagraph(paragraphFormat, paragraph):
+            break
+        start += 1
+    end = 0
+    for paragraph in reversed(result):
+        if _isTextParagraph(paragraphFormat, paragraph):
+            break
+        end += 1
+    if end > 0:
+        return result[start:-end]
+    return result[start:]
 
-def parse(paragraphFormat, contentElement):
-    mainElement = _getMainElement(contentElement)
+def parse(paragraphFormat, contentElement, titleElement):
+    mainElement = _getMainElement(contentElement, titleElement)
     tag = _getMaxChildTag(mainElement)
     paragraphs = _getParagraphsByTag(mainElement, tag)
     if paragraphFormat and paragraphs:

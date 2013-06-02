@@ -11,18 +11,20 @@ from . import imgparser
 
 def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elementResult={}):
     page = {}
+    page['url'] = url
     docelement = lxml.html.fromstring(content)
 
     titleFormat = editorFormat.get('title', {})
     title, titleeEements = titleparser.parse(titleFormat, url, docelement, monitorTitle, fortest)
+    if title:
+        page['title'] = title
     if not titleeEements:
         return page
-    page['title'] = title
     if elementResult is not None:
         elementResult['titles'] = titleeEements
-
-    page['url'] = url
     titleElement, contentElement = contentparser.parse(titleeEements)
+    if titleElement is not None:
+        page['title'] = lxmlutil.getCleanText(titleElement)
     if elementResult is not None and titleElement is not None:
         elementResult['element'] = {}
         elementResult['text'] = {}
@@ -34,7 +36,7 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
         elementResult['text']['content'] = lxmlutil.getCleanText(contentElement)
 
     paragraphFormat = editorFormat.get('paragraph', {})
-    mainElement, paragraphs = paragraphparser.parse(paragraphFormat, contentElement)
+    mainElement, paragraphs = paragraphparser.parse(paragraphFormat, contentElement, titleElement)
     if paragraphs:
         page['paragraphs'] = paragraphs
         page['content'] = digestparser.parse(paragraphFormat, paragraphs)
@@ -42,7 +44,7 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
         elementResult['element']['main'] = (mainElement.tag, mainElement.sourceline)
         elementResult['text']['main'] = lxmlutil.getCleanText(mainElement)
 
-    if mainElement is not None:
+    if paragraphs:
         publishedFormat = editorFormat.get('published', {})
         publishedElement, published = publishedparser.parse(publishedFormat, titleElement, mainElement)
         if published:
