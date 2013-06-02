@@ -17,8 +17,9 @@ def _getMainTitle(titleFormat, url, title, sideEffect):
         if not modelapi.isConstantTitle(titleFormat, url, part, sideEffect):
             mainTitles.append(part)
     if mainTitles:
-        mainTitles.sort(key=lambda k: len(k), reverse=True)
-        return mainTitles[0]
+        return max(mainTitles, key=lambda k: len(k))
+    elif parts:
+        return max(parts, key=lambda k: len(k))
     return None
 
 def _getTitleFromHead(docelement):

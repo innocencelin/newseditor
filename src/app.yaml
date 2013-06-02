@@ -5,6 +5,15 @@ api_version: 1
 threadsafe: true
 
 handlers:
+- url: /favicon.ico
+  static_files: html/site/favicon.ico
+  upload: html/site/favicon.ico
+  mime_type: image/x-icon
+- url: /robots.txt
+  static_files: html/site/robots.txt
+  upload: html/site/robots.txt
+- url: /media/0
+  static_dir: html/media
 - url: /admin/config/.*
   script: library.configmanager.main.app
   login: admin

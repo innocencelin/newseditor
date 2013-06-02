@@ -1,27 +1,46 @@
 import json
 import os
 
-from google.appengine.ext.webapp import template
-import webapp2
 
 from commonutil import jsonutil
 from contentfetcher import ContentFetcher
 
+from templateutil.handlers import BasicHandler
+
 from page import pageanalyst
 from . import globalconfig
 
-class TestPage(webapp2.RequestHandler):
 
-    def _render(self, templateValues):
-        self.response.headers['Content-Type'] = 'text/html'
-        path = os.path.join(os.path.dirname(__file__), 'templates', 'index.html')
-        self.response.out.write(template.render(path, templateValues))
+class MyHandler(BasicHandler):
 
+    def prepareBaseValues(self):
+        self.site = globalconfig.getSiteConfig()
+        self.i18n = globalconfig.getI18N()
+
+class HomePage(MyHandler):
+
+    def get(self):
+        url = self.request.get('url')
+        page = {'url': url}
+        if url:
+            tried = 2 # the max try count is 3
+            fetcher = ContentFetcher(url, tried=tried)
+            fetchResult = fetcher.fetch()
+            content = fetchResult.get('content')
+            if content:
+                editorFormat = globalconfig.getEditorFormat()
+                page = pageanalyst.analyse(url, content, editorFormat=editorFormat)
+        templateValues = {
+            'page': page,
+        }
+        self.render(templateValues, 'home.html')
+
+class TestPage(MyHandler):
     def get(self):
         templateValues = {
             'fortest': True,
         }
-        self._render(templateValues)
+        self.render(templateValues, 'test.html')
 
     def post(self):
         url = self.request.get('url')
@@ -62,5 +81,5 @@ class TestPage(webapp2.RequestHandler):
             'page': page,
             'elementResult': elementResult,
         }
-        self._render(templateValues)
+        self.render(templateValues, 'test.html')
 
