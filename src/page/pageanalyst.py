@@ -23,14 +23,14 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
 
     page['url'] = url
     titleElement, contentElement = contentparser.parse(titleeEements)
-    if elementResult is not None:
+    if elementResult is not None and titleElement is not None:
         elementResult['element'] = {}
         elementResult['text'] = {}
 
-        elementResult['element']['title'] = titleElement
+        elementResult['element']['title'] = (titleElement.tag, titleElement.sourceline)
         elementResult['text']['title'] = lxmlutil.getCleanText(titleElement)
 
-        elementResult['element']['content'] = contentElement
+        elementResult['element']['content'] = (contentElement.tag, contentElement.sourceline)
         elementResult['text']['content'] = lxmlutil.getCleanText(contentElement)
 
     paragraphFormat = editorFormat.get('paragraph', {})
@@ -38,8 +38,8 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
     if paragraphs:
         page['paragraphs'] = paragraphs
         page['content'] = digestparser.parse(paragraphFormat, paragraphs)
-    if elementResult is not None:
-        elementResult['element']['main'] = mainElement
+    if elementResult is not None and mainElement is not None:
+        elementResult['element']['main'] = (mainElement.tag, mainElement.sourceline)
         elementResult['text']['main'] = lxmlutil.getCleanText(mainElement)
 
     if mainElement is not None:
@@ -47,8 +47,8 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
         publishedElement, published = publishedparser.parse(publishedFormat, titleElement, mainElement)
         if published:
             page['published'] = published
-        if elementResult is not None:
-            elementResult['element']['published'] = publishedElement
+        if elementResult is not None and publishedElement is not None:
+            elementResult['element']['published'] = (publishedElement.tag, publishedElement.sourceline)
             if publishedElement is not None:
                 elementResult['text']['published'] = lxmlutil.getCleanText(publishedElement)
 

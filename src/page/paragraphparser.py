@@ -7,9 +7,9 @@ def _getChildTextLength(element):
     for item in element.getchildren():
         if lxmlutil.isVisibleElement(item):
             if item.text:
-                result += len(item.text)
+                result += len(item.text.strip())
         if item.tail:
-            result += len(item.tail)
+            result += len(item.tail.strip())
     return result
 
 def _getMainElement(contentElement):
