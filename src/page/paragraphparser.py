@@ -44,10 +44,17 @@ def _getMainElement(contentElement, titleElement):
     result = []
     for item in items:
         weight = _getChildTextLength(item)
-        result.append((weight, item))
+        result.append([weight, item])
     result2 = [item for item in result if item[0] >= _MIN_MAIN_LENGTH]
+    for item in result2:
+        # an element with more children is prefered.
+        # an elment closer to title element is prefered.
+        # 11 is used to avoid divide by 0 and a more balance.
+        # eg, (m/2, n/22), (m/12, n/32); the later n has more chance.
+        item[0] = item[0] * len(item[1].getchildren()
+                    ) * 1.0 / (abs(item[1].sourceline - titleElement.sourceline) + 11)
     if result2:
-        return min(result2, key=lambda item: item[1].sourceline)[1]
+        return max(result2, key=lambda item: item[0])[1]
     return max(result, key=lambda item: item[0])[1]
 
 def _getMaxChildTag(element):
