@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 
@@ -21,8 +22,21 @@ class HomePage(MyHandler):
 
     def get(self):
         url = self.request.get('url')
-        page = {'url': url}
+        page = {}
         if url:
+            try:
+                url = base64.b64decode(url)
+                url2 = ''
+                length = len(url)
+                for i in range(0, length, 2):
+                    if i + 1 < length:
+                        url2 += url[i+1] + url[i]
+                if length % 2 != 0:
+                    url2 += url[-1]
+                url = url2
+            except TypeError:
+                pass
+            page['url'] = url
             tried = 2 # the max try count is 3
             fetcher = ContentFetcher(url, tried=tried)
             fetchResult = fetcher.fetch()
@@ -37,8 +51,10 @@ class HomePage(MyHandler):
 
 class TestPage(MyHandler):
     def get(self):
+        url = self.request.get('url')
         templateValues = {
             'fortest': True,
+            'url': url,
         }
         self.render(templateValues, 'test.html')
 

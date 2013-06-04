@@ -25,6 +25,7 @@ config['webapp2_extras.jinja2'] = {
 
 app = webapp2.WSGIApplication([
 ('/', editor.handlers.HomePage),
+('/page/', editor.handlers.HomePage),
 ('/test/', editor.handlers.TestPage),
 ('/api/edit/', editor.handlersapi.EditRequest),
 ('/edit/batch/', editor.handlersapi.BatchEditRequest),

@@ -23,7 +23,8 @@ def _getPublishedInside(publishedFormat, element):
     items = []
     funcResult = []
     textFunc = tailFunc = lambda text: _getPublished(publishedFormat, text)
-    lxmlutil.findAllVisibleMatched(items, element, textFunc, tailFunc, funcResult)
+    lxmlutil.findAllVisibleMatched(items, element, textFunc, tailFunc,
+                                    funcResult, includeSelf=True)
 
     if items:
         return items[0], funcResult[0]
