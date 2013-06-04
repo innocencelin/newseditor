@@ -2,8 +2,9 @@ import base64
 import json
 import os
 
+from google.appengine.api import memcache
 
-from commonutil import jsonutil
+from commonutil import jsonutil, stringutil
 from contentfetcher import ContentFetcher
 
 from templateutil.handlers import BasicHandler
@@ -22,7 +23,7 @@ class HomePage(MyHandler):
 
     def get(self):
         url = self.request.get('url')
-        page = {}
+        page = None
         if url:
             try:
                 url = base64.b64decode(url)
@@ -36,14 +37,20 @@ class HomePage(MyHandler):
                 url = url2
             except TypeError:
                 pass
-            page['url'] = url
-            tried = 2 # the max try count is 3
-            fetcher = ContentFetcher(url, tried=tried)
-            fetchResult = fetcher.fetch()
-            content = fetchResult.get('content')
-            if content:
-                editorFormat = globalconfig.getEditorFormat()
-                page = pageanalyst.analyse(url, content, editorFormat=editorFormat)
+            key = stringutil.calculateHash([url])
+            page = memcache.get(key)
+            if not page:
+                tried = 2 # the max try count is 3
+                fetcher = ContentFetcher(url, tried=tried)
+                fetchResult = fetcher.fetch()
+                content = fetchResult.get('content')
+                if content:
+                    editorFormat = globalconfig.getEditorFormat()
+                    page = pageanalyst.analyse(url, content, editorFormat=editorFormat)
+                    if page:
+                        memcache.set(key, page)
+        if not page:
+            page = {'url': url}
         templateValues = {
             'page': page,
         }
