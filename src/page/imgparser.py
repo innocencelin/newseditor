@@ -32,18 +32,13 @@ def _getNextText(element):
 
 def _getImgTitle(element):
     alt = element.get('alt')
-    nextTitle = _getNextText(element)
-    nextMaxLength = 50
     if alt:
-        if nextTitle:
-            if len(alt) <= len(nextTitle):
-                return alt
-            else:
-                return nextTitle[:nextMaxLength]
-        else:
-            return alt
-    else:
-        return nextTitle[:nextMaxLength]
+        return alt
+    nextTitle = _getNextText(element)
+    nextMaxLength = 30
+    if nextTitle and len(nextTitle) <= nextMaxLength:
+        return nextTitle
+    return None
 
 def _parseImg(url, imgElement):
     img = {}

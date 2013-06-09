@@ -5,21 +5,17 @@ from commonutil import lxmlutil
 
 def parse(publishedFormat, titleElement, mainElement):
     if titleElement.sourceline >= mainElement.sourceline:
-        return None, None
-    published = None
-    publishedElement = None
+        return None
+    publishedResult = None
     element = lxmlutil.getFullNext(titleElement)
     while element.sourceline < mainElement.sourceline:
-        publishedElement, published = _getPublishedInside(publishedFormat, element)
-        if publishedElement is not None:
+        publishedResult = _getPublishedInside(publishedFormat, element)
+        if publishedResult:
             break
         element = lxmlutil.getFullNext(element)
-    return publishedElement, published
+    return publishedResult
 
 def _getPublishedInside(publishedFormat, element):
-    published = None
-    publishedElement = None
-
     items = []
     funcResult = []
     textFunc = tailFunc = lambda text: _getPublished(publishedFormat, text)
@@ -27,8 +23,8 @@ def _getPublishedInside(publishedFormat, element):
                                     funcResult, includeSelf=True)
 
     if items:
-        return items[0], funcResult[0]
-    return publishedElement, published
+        return items[0], funcResult[0][0], funcResult[0][1]
+    return None
 
 def _getPublished(publishedFormat, content):
     publishedPatterns = publishedFormat.get('patterns')
@@ -72,7 +68,7 @@ def _getPublished(publishedFormat, content):
             else:
                 data['second'] = '00'
 
-            return format % data
+            return m.group(0), format % data
 
     return None
 

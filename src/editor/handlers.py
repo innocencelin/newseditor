@@ -48,7 +48,11 @@ class HomePage(MyHandler):
                     editorFormat = globalconfig.getEditorFormat()
                     page = pageanalyst.analyse(url, content, editorFormat=editorFormat)
                     if page:
+                        page['url'] = url
+                    if page and (page.get('content') or page.get('images')):
                         memcache.set(key, page)
+                    else:
+                        self.redirect(url, permanent=True)
         if not page:
             page = {'url': url}
         templateValues = {

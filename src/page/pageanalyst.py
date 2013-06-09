@@ -1,4 +1,5 @@
 ﻿# coding=utf-8
+import logging
 import lxml
 
 from commonutil import lxmlutil
@@ -11,7 +12,6 @@ from . import imgparser
 
 def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elementResult={}):
     page = {}
-    page['url'] = url
     docelement = lxml.html.fromstring(content)
 
     titleFormat = editorFormat.get('title', {})
@@ -45,10 +45,13 @@ def analyse(url, content, editorFormat, monitorTitle=None, fortest=False, elemen
         elementResult['text']['main'] = lxmlutil.getCleanText(mainElement)
 
     if paragraphs:
+        publishedElement = None
         publishedFormat = editorFormat.get('published', {})
-        publishedElement, published = publishedparser.parse(publishedFormat, titleElement, mainElement)
-        if published:
-            page['published'] = published
+        publishedResult = publishedparser.parse(publishedFormat, titleElement, mainElement)
+        if publishedResult:
+            page['publishedtext'] = publishedResult[1]
+            page['published'] = publishedResult[2]
+            publishedElement = publishedResult[0]
         if elementResult is not None and publishedElement is not None:
             elementResult['element']['published'] = (publishedElement.tag, publishedElement.sourceline)
             if publishedElement is not None:
