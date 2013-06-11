@@ -1,6 +1,9 @@
 import base64
 import json
 import os
+import urllib
+import urllib2
+import urlparse
 
 from google.appengine.api import memcache
 
@@ -18,6 +21,29 @@ class MyHandler(BasicHandler):
     def prepareBaseValues(self):
         self.site = globalconfig.getSiteConfig()
         self.i18n = globalconfig.getI18N()
+
+class ImageProxy(BasicHandler):
+
+    def get(self):
+        url = self.request.get('url')
+        if not url:
+            return
+        path = urlparse.urlparse(url).path
+        ext = os.path.splitext(path)[1]
+        if ext:
+            contentType = 'image/%s' % (str(ext)[1:], )
+        else:
+            contentType = 'image/jpeg'
+        self.response.headers['Content-Type'] = contentType
+        key = stringutil.calculateHash([url])
+        content = memcache.get(key)
+        if not content:
+            res = urllib2.urlopen(url)
+            content = res.read()
+            res.close()
+            if content:
+                memcache.set(key, content)
+        self.response.out.write(content)
 
 class HomePage(MyHandler):
 
@@ -55,6 +81,9 @@ class HomePage(MyHandler):
                         self.redirect(url, permanent=True)
         if not page:
             page = {'url': url}
+        if 'images' in page:
+            for image in page['images']:
+                image['url'] = '/image/?url=' + urllib.quote(image['url'].encode('utf-8'))
         templateValues = {
             'page': page,
         }
