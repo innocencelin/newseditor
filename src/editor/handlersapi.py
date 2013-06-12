@@ -5,7 +5,7 @@ from google.appengine.api import taskqueue
 
 import webapp2
 
-from commonutil import networkutil
+from commonutil import dateutil, networkutil
 from contentfetcher import ContentFetcher
 from page import pageanalyst
 from . import globalconfig
@@ -34,7 +34,7 @@ class BatchEditRequest(webapp2.RequestHandler):
         data = json.loads(self.request.body)
 
         items = data['items']
-
+        origin = data['origin']
         header = data.get('header')
         for item in items:
             url = item.get('url')
@@ -55,6 +55,12 @@ class BatchEditRequest(webapp2.RequestHandler):
                             editorFormat=editorFormat, monitorTitle=item.get('title'))
                 if not item.get('title') and page.get('title'):
                     item['title'] = page['title']
+                if not item.get('published') and page.get('published') \
+                        and not page['published'].endswith('0000'):
+                    # if no hour, minute, published is not precise enough
+                    item['published'] = page['published']
+                    if origin.get('timezone'):
+                        item['published'] = dateutil.adjustDate14(item['published'], origin['timezone'])
                 if not item.get('content') and page.get('content'):
                     item['content'] = page['content']
                 if not item.get('img') and page.get('images'):

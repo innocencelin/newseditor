@@ -65,6 +65,7 @@ class HomePage(MyHandler):
                 pass
             key = stringutil.calculateHash([url])
             page = memcache.get(key)
+            contentGot = bool(page)
             if not page:
                 tried = 2 # the max try count is 3
                 fetcher = ContentFetcher(url, tried=tried)
@@ -77,10 +78,11 @@ class HomePage(MyHandler):
                         page['url'] = url
                     if page and (page.get('content') or page.get('images')):
                         memcache.set(key, page)
-                    else:
-                        self.redirect(url, permanent=True)
-        if not page:
+                        contentGot = True
+        if not contentGot:
             page = {'url': url}
+            self.redirect(url, permanent=True)
+            return
         if 'images' in page:
             for image in page['images']:
                 image['url'] = '/image/?url=' + urllib.quote(image['url'].encode('utf-8'))
