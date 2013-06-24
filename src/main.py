@@ -23,6 +23,10 @@ config['webapp2_extras.jinja2'] = {
     },
 }
 
+config['webapp2_extras.sessions'] = {
+    'secret_key': 'dsdfsdfdsffds',
+}
+
 app = webapp2.WSGIApplication([
 ('/', editor.handlers.HomePage),
 ('/page/', editor.handlers.HomePage),
